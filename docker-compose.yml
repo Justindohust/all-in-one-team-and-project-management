@@ -1,11 +1,11 @@
 version: '3.8'
 
 services:
-  teamhub:
+  digihub:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: teamhub-app
+    container_name: digihub-app
     ports:
       - "3000:80"
     restart: unless-stopped
