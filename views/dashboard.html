@@ -1,0 +1,363 @@
+<!-- Dashboard Page -->
+<div id="dashboard-page" class="page">
+  <!-- Stats Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
+    <!-- Total Projects -->
+    <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5 hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/5 cursor-pointer">
+      <div class="flex items-start justify-between mb-3">
+        <span class="text-sm text-slate-400 font-medium">Total Projects</span>
+        <div class="w-10 h-10 rounded-lg bg-primary-500/15 flex items-center justify-center">
+          <svg class="w-5 h-5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+          </svg>
+        </div>
+      </div>
+      <p class="text-3xl font-bold text-white mb-1" id="stat-total-projects">24</p>
+      <p class="text-xs text-success flex items-center gap-1">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+        </svg>
+        +12% from last month
+      </p>
+    </div>
+
+    <!-- Active Tasks -->
+    <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5 hover:border-info/50 hover:shadow-lg hover:shadow-info/5 cursor-pointer">
+      <div class="flex items-start justify-between mb-3">
+        <span class="text-sm text-slate-400 font-medium">Active Tasks</span>
+        <div class="w-10 h-10 rounded-lg bg-info/15 flex items-center justify-center">
+          <svg class="w-5 h-5 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+        </div>
+      </div>
+      <p class="text-3xl font-bold text-white mb-1" id="stat-active-tasks">156</p>
+      <p class="text-xs text-success flex items-center gap-1">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+        </svg>
+        +8% from last week
+      </p>
+    </div>
+
+    <!-- Team Members -->
+    <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5 hover:border-success/50 hover:shadow-lg hover:shadow-success/5 cursor-pointer">
+      <div class="flex items-start justify-between mb-3">
+        <span class="text-sm text-slate-400 font-medium">Team Members</span>
+        <div class="w-10 h-10 rounded-lg bg-success/15 flex items-center justify-center">
+          <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197"/>
+          </svg>
+        </div>
+      </div>
+      <p class="text-3xl font-bold text-white mb-1" id="stat-team-members">12</p>
+      <p class="text-xs text-success flex items-center gap-1">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+        </svg>
+        +2 new this month
+      </p>
+    </div>
+
+    <!-- Completion Rate -->
+    <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5 hover:border-warning/50 hover:shadow-lg hover:shadow-warning/5 cursor-pointer">
+      <div class="flex items-start justify-between mb-3">
+        <span class="text-sm text-slate-400 font-medium">Completed</span>
+        <div class="w-10 h-10 rounded-lg bg-warning/15 flex items-center justify-center">
+          <svg class="w-5 h-5 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+      </div>
+      <p class="text-3xl font-bold text-white mb-1" id="stat-completion-rate">89%</p>
+      <p class="text-xs text-success flex items-center gap-1">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+        </svg>
+        +5% from last month
+      </p>
+    </div>
+  </div>
+
+  <!-- Projects TreeView Section -->
+  <div class="mb-8">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-lg font-semibold text-white">Projects</h2>
+      <button class="flex items-center gap-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium rounded-lg cursor-pointer" onclick="addNewProject()">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        New Project
+      </button>
+    </div>
+
+    <div id="projects-treeview" class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
+      <!-- TreeView will be rendered here dynamically -->
+    </div>
+  </div>
+
+  <!-- Task Board Section -->
+  <div class="mb-8">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-lg font-semibold text-white">Task Board</h2>
+      <div class="flex items-center gap-2">
+        <button class="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-lg border border-slate-700 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+          </svg>
+          Filter
+        </button>
+        <button onclick="openTaskModal()" class="flex items-center gap-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium rounded-lg cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Add Task
+        </button>
+      </div>
+    </div>
+
+    <!-- Kanban Board -->
+    <div id="dashboard-kanban" class="flex gap-4 lg:gap-6 overflow-x-auto pb-4 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+      <!-- To Do Column -->
+      <div class="flex-shrink-0 w-72 sm:w-80" data-kanban-column="todo">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-2 h-2 rounded-full bg-slate-400"></div>
+          <span class="font-medium text-white">To Do</span>
+          <span class="px-2 py-0.5 bg-slate-700 text-slate-300 text-xs font-medium rounded-full">4</span>
+        </div>
+        
+        <div class="space-y-3">
+          <div class="bg-slate-800/50 border border-slate-700/50 rounded-lg p-4 hover:border-slate-600 cursor-pointer">
+            <div class="flex flex-wrap gap-1.5 mb-2">
+              <span class="px-2 py-0.5 bg-purple-500/15 text-purple-400 text-[10px] font-medium rounded-full">Design</span>
+            </div>
+            <h4 class="font-medium text-white text-sm mb-1">Create wireframes for dashboard</h4>
+            <p class="text-xs text-slate-400 mb-3">Design initial wireframes for the new dashboard layout</p>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3 text-xs text-slate-400">
+                <span class="flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                  </svg>
+                  3
+                </span>
+              </div>
+              <div class="w-6 h-6 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-[9px] font-semibold text-white">AS</div>
+            </div>
+          </div>
+
+          <button onclick="openTaskModal()" class="w-full p-3 border border-dashed border-slate-700 rounded-lg text-slate-400 text-sm hover:border-primary-500 hover:text-primary-400 hover:bg-primary-500/5 flex items-center justify-center gap-2 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Task
+          </button>
+        </div>
+      </div>
+
+      <!-- In Progress Column -->
+      <div class="flex-shrink-0 w-72 sm:w-80" data-kanban-column="in_progress">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-2 h-2 rounded-full bg-info"></div>
+          <span class="font-medium text-white">In Progress</span>
+          <span class="px-2 py-0.5 bg-slate-700 text-slate-300 text-xs font-medium rounded-full">3</span>
+        </div>
+        
+        <div class="space-y-3">
+          <div class="bg-slate-800/50 border border-slate-700/50 rounded-lg p-4 hover:border-slate-600 cursor-pointer">
+            <div class="flex flex-wrap gap-1.5 mb-2">
+              <span class="px-2 py-0.5 bg-success/15 text-success text-[10px] font-medium rounded-full">Backend</span>
+            </div>
+            <h4 class="font-medium text-white text-sm mb-1">Implement user authentication</h4>
+            <p class="text-xs text-slate-400 mb-3">Set up JWT-based authentication system</p>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3 text-xs text-slate-400">
+                <span class="flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                  </svg>
+                  5
+                </span>
+              </div>
+              <div class="w-6 h-6 rounded-full bg-gradient-to-br from-info to-primary-400 flex items-center justify-center text-[9px] font-semibold text-white">TL</div>
+            </div>
+          </div>
+
+          <button onclick="openTaskModal()" class="w-full p-3 border border-dashed border-slate-700 rounded-lg text-slate-400 text-sm hover:border-primary-500 hover:text-primary-400 hover:bg-primary-500/5 flex items-center justify-center gap-2 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Task
+          </button>
+        </div>
+      </div>
+
+      <!-- Review Column -->
+      <div class="flex-shrink-0 w-72 sm:w-80" data-kanban-column="in_review">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-2 h-2 rounded-full bg-warning"></div>
+          <span class="font-medium text-white">Review</span>
+          <span class="px-2 py-0.5 bg-slate-700 text-slate-300 text-xs font-medium rounded-full">2</span>
+        </div>
+        
+        <div class="space-y-3">
+          <div class="bg-slate-800/50 border border-slate-700/50 rounded-lg p-4 hover:border-slate-600 cursor-pointer">
+            <div class="flex flex-wrap gap-1.5 mb-2">
+              <span class="px-2 py-0.5 bg-info/15 text-info text-[10px] font-medium rounded-full">Frontend</span>
+            </div>
+            <h4 class="font-medium text-white text-sm mb-1">Dashboard components</h4>
+            <p class="text-xs text-slate-400 mb-3">Review PR for new dashboard stat cards</p>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3 text-xs text-slate-400">
+                <span class="flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                  </svg>
+                  8
+                </span>
+              </div>
+              <div class="w-6 h-6 rounded-full bg-gradient-to-br from-warning to-accent-500 flex items-center justify-center text-[9px] font-semibold text-white">MK</div>
+            </div>
+          </div>
+
+          <button onclick="openTaskModal()" class="w-full p-3 border border-dashed border-slate-700 rounded-lg text-slate-400 text-sm hover:border-primary-500 hover:text-primary-400 hover:bg-primary-500/5 flex items-center justify-center gap-2 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Task
+          </button>
+        </div>
+      </div>
+
+      <!-- Done Column -->
+      <div class="flex-shrink-0 w-72 sm:w-80" data-kanban-column="done">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-2 h-2 rounded-full bg-success"></div>
+          <span class="font-medium text-white">Done</span>
+          <span class="px-2 py-0.5 bg-slate-700 text-slate-300 text-xs font-medium rounded-full">5</span>
+        </div>
+        
+        <div class="space-y-3">
+          <div class="bg-slate-800/50 border border-slate-700/50 rounded-lg p-4 hover:border-slate-600 cursor-pointer">
+            <div class="flex flex-wrap gap-1.5 mb-2">
+              <span class="px-2 py-0.5 bg-purple-500/15 text-purple-400 text-[10px] font-medium rounded-full">Design</span>
+            </div>
+            <h4 class="font-medium text-white text-sm mb-1">Brand guidelines document</h4>
+            <p class="text-xs text-slate-400 mb-3">Completed brand style guide with color palette</p>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5 text-xs text-success">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Completed
+              </div>
+              <div class="w-6 h-6 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-[9px] font-semibold text-white">AS</div>
+            </div>
+          </div>
+
+          <button onclick="openTaskModal()" class="w-full p-3 border border-dashed border-slate-700 rounded-lg text-slate-400 text-sm hover:border-primary-500 hover:text-primary-400 hover:bg-primary-500/5 flex items-center justify-center gap-2 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Task
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Team Members Section -->
+  <div>
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-lg font-semibold text-white">Team Members</h2>
+      <button onclick="openInviteModal()" class="flex items-center gap-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium rounded-lg cursor-pointer">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+        </svg>
+        Add Member
+      </button>
+    </div>
+
+    <div id="dashboard-team-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+      <!-- Team members will be loaded dynamically -->
+      <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5 text-center hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/10 cursor-pointer">
+        <div class="relative w-16 h-16 mx-auto mb-4">
+          <div class="w-16 h-16 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-xl font-semibold text-white">JD</div>
+          <div class="absolute bottom-0 right-0 w-4 h-4 bg-success rounded-full border-2 border-slate-800"></div>
+        </div>
+        <h3 class="font-semibold text-white mb-0.5">John Doe</h3>
+        <p class="text-sm text-primary-400 mb-0.5">Project Manager</p>
+        <p class="text-xs text-slate-400 mb-4">john@digihub.io</p>
+        <div class="flex justify-center gap-6 pt-4 border-t border-slate-700/50">
+          <div class="text-center">
+            <p class="text-lg font-semibold text-white">8</p>
+            <p class="text-xs text-slate-400">Projects</p>
+          </div>
+          <div class="text-center">
+            <p class="text-lg font-semibold text-white">24</p>
+            <p class="text-xs text-slate-400">Tasks</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5 text-center hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/10 cursor-pointer">
+        <div class="relative w-16 h-16 mx-auto mb-4">
+          <div class="w-16 h-16 rounded-full bg-gradient-to-br from-info to-primary-400 flex items-center justify-center text-xl font-semibold text-white">AS</div>
+          <div class="absolute bottom-0 right-0 w-4 h-4 bg-success rounded-full border-2 border-slate-800"></div>
+        </div>
+        <h3 class="font-semibold text-white mb-0.5">Alice Smith</h3>
+        <p class="text-sm text-primary-400 mb-0.5">UI/UX Designer</p>
+        <p class="text-xs text-slate-400 mb-4">alice@digihub.io</p>
+        <div class="flex justify-center gap-6 pt-4 border-t border-slate-700/50">
+          <div class="text-center">
+            <p class="text-lg font-semibold text-white">5</p>
+            <p class="text-xs text-slate-400">Projects</p>
+          </div>
+          <div class="text-center">
+            <p class="text-lg font-semibold text-white">18</p>
+            <p class="text-xs text-slate-400">Tasks</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5 text-center hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/10 cursor-pointer">
+        <div class="relative w-16 h-16 mx-auto mb-4">
+          <div class="w-16 h-16 rounded-full bg-gradient-to-br from-warning to-accent-500 flex items-center justify-center text-xl font-semibold text-white">MK</div>
+        </div>
+        <h3 class="font-semibold text-white mb-0.5">Mike Kim</h3>
+        <p class="text-sm text-primary-400 mb-0.5">Senior Developer</p>
+        <p class="text-xs text-slate-400 mb-4">mike@digihub.io</p>
+        <div class="flex justify-center gap-6 pt-4 border-t border-slate-700/50">
+          <div class="text-center">
+            <p class="text-lg font-semibold text-white">6</p>
+            <p class="text-xs text-slate-400">Projects</p>
+          </div>
+          <div class="text-center">
+            <p class="text-lg font-semibold text-white">32</p>
+            <p class="text-xs text-slate-400">Tasks</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5 text-center hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/10 cursor-pointer">
+        <div class="relative w-16 h-16 mx-auto mb-4">
+          <div class="w-16 h-16 rounded-full bg-gradient-to-br from-success to-info flex items-center justify-center text-xl font-semibold text-white">TN</div>
+          <div class="absolute bottom-0 right-0 w-4 h-4 bg-success rounded-full border-2 border-slate-800"></div>
+        </div>
+        <h3 class="font-semibold text-white mb-0.5">Tina Nguyen</h3>
+        <p class="text-sm text-primary-400 mb-0.5">Frontend Developer</p>
+        <p class="text-xs text-slate-400 mb-4">tina@digihub.io</p>
+        <div class="flex justify-center gap-6 pt-4 border-t border-slate-700/50">
+          <div class="text-center">
+            <p class="text-lg font-semibold text-white">4</p>
+            <p class="text-xs text-slate-400">Projects</p>
+          </div>
+          <div class="text-center">
+            <p class="text-lg font-semibold text-white">15</p>
+            <p class="text-xs text-slate-400">Tasks</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

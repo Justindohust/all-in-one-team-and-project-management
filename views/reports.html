@@ -1,0 +1,106 @@
+<!-- Reports Page -->
+<!-- Report Filters -->
+<div class="flex flex-wrap items-center gap-4 mb-6">
+  <select id="report-period" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+    <option value="7">Last 7 days</option>
+    <option value="30">Last 30 days</option>
+    <option value="90">Last 3 months</option>
+    <option value="365">This year</option>
+  </select>
+  <select id="report-project" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+    <option value="">All Projects</option>
+  </select>
+  <button onclick="exportReport()" class="ml-auto flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium rounded-lg border border-slate-700">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+    </svg>
+    Export Report
+  </button>
+</div>
+
+<!-- Stats Overview -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-slate-400">Tasks Completed</p>
+        <p id="report-tasks-completed" class="text-2xl font-bold text-white mt-1">0</p>
+        <p id="report-tasks-change" class="text-xs text-success mt-1">↑ 0% from last period</p>
+      </div>
+      <div class="w-12 h-12 bg-success/20 rounded-xl flex items-center justify-center">
+        <svg class="w-6 h-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+  <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-slate-400">Hours Tracked</p>
+        <p id="report-hours" class="text-2xl font-bold text-white mt-1">0h</p>
+        <p id="report-hours-change" class="text-xs text-info mt-1">↑ 0% from last period</p>
+      </div>
+      <div class="w-12 h-12 bg-info/20 rounded-xl flex items-center justify-center">
+        <svg class="w-6 h-6 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+  <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-slate-400">On-Time Delivery</p>
+        <p id="report-ontime" class="text-2xl font-bold text-white mt-1">0%</p>
+        <p id="report-ontime-change" class="text-xs text-warning mt-1">↓ 0% from last period</p>
+      </div>
+      <div class="w-12 h-12 bg-warning/20 rounded-xl flex items-center justify-center">
+        <svg class="w-6 h-6 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+  <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-slate-400">Team Efficiency</p>
+        <p id="report-efficiency" class="text-2xl font-bold text-white mt-1">0%</p>
+        <p id="report-efficiency-change" class="text-xs text-success mt-1">↑ 0% from last period</p>
+      </div>
+      <div class="w-12 h-12 bg-primary-500/20 rounded-xl flex items-center justify-center">
+        <svg class="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  <!-- Task Progress Chart -->
+  <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
+    <h3 class="text-lg font-semibold text-white mb-4">Task Progress by Project</h3>
+    <div id="project-progress-chart" class="space-y-4">
+      <!-- Progress bars will be loaded dynamically -->
+    </div>
+  </div>
+  
+  <!-- Team Performance -->
+  <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
+    <h3 class="text-lg font-semibold text-white mb-4">Team Performance</h3>
+    <div id="team-performance-list" class="space-y-3">
+      <!-- Team performance cards will be loaded dynamically -->
+    </div>
+  </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
+  <h3 class="text-lg font-semibold text-white mb-4">Recent Activity</h3>
+  <div id="activity-feed" class="space-y-4">
+    <!-- Activity items will be loaded dynamically -->
+  </div>
+</div>

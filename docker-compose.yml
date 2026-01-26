@@ -1,16 +1,69 @@
-version: '3.8'
-
 services:
-  digihub:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: digihub-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: digihub
+      POSTGRES_USER: digihub_user
+      POSTGRES_PASSWORD: digihub_secret_2026
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./backend/database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U digihub_user -d digihub"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - digihub-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: digihub-backend
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: digihub
+      DB_USER: digihub_user
+      DB_PASSWORD: digihub_secret_2026
+      JWT_SECRET: your-super-secret-jwt-key-change-this-in-production
+      JWT_EXPIRES_IN: 7d
+      PORT: 3001
+      NODE_ENV: production
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - digihub-network
+
+  # Frontend (Nginx)
+  frontend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: digihub-app
+    container_name: digihub-frontend
+    restart: unless-stopped
     ports:
       - "3000:80"
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    depends_on:
+      - backend
+    networks:
+      - digihub-network
+
+volumes:
+  postgres_data:
+
+networks:
+  digihub-network:
+    driver: bridge

@@ -1,0 +1,301 @@
+<!-- Login Modal -->
+<div id="login-modal" class="fixed inset-0 z-50 hidden">
+  <div class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm"></div>
+  <div class="fixed inset-0 overflow-y-auto">
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-md p-8">
+        <div class="text-center mb-8">
+          <div class="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <img src="resources/DigiFact_Logo_Noname_Type1.png" alt="DigiHub Logo" class="w-full h-full object-contain">
+          </div>
+          <h2 class="text-2xl font-bold text-white">Welcome to DigiHub</h2>
+          <p class="text-slate-400 mt-2">Sign in to your account</p>
+        </div>
+        
+        <form id="login-form" onsubmit="handleLogin(event)">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Email</label>
+              <input type="email" id="login-email" required value="admin@digihub.com" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="you@example.com">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Password</label>
+              <input type="password" id="login-password" required value="admin123" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="••••••••">
+            </div>
+            
+            <div class="flex items-center justify-between">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" class="w-4 h-4 rounded border-slate-700 bg-slate-900 text-primary-500 focus:ring-2 focus:ring-primary-500">
+                <span class="text-sm text-slate-300">Remember me</span>
+              </label>
+              <a href="#" class="text-sm text-primary-400 hover:text-primary-300">Forgot password?</a>
+            </div>
+          </div>
+          
+          <button type="submit" class="w-full mt-6 px-4 py-3 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg transition-colors">
+            Sign In
+          </button>
+          
+          <p id="login-error" class="hidden mt-4 text-center text-sm text-danger"></p>
+        </form>
+        
+        <div class="mt-6 text-center">
+          <p class="text-slate-400 text-sm">Don't have an account? <a href="#" onclick="showRegisterModal()" class="text-primary-400 hover:text-primary-300">Sign up</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Project Modal -->
+<div id="project-modal" class="fixed inset-0 z-50 hidden">
+  <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeProjectModal()"></div>
+  <div class="fixed inset-0 overflow-y-auto">
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-md p-6" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-semibold text-white">New Project</h3>
+          <button onclick="closeProjectModal()" class="text-slate-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        
+        <form id="project-form" onsubmit="createProject(event)">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Project Name</label>
+              <input type="text" id="project-name" required class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Enter project name">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Project Group</label>
+              <select id="project-group" required class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                <option value="">Select a group</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Description (Optional)</label>
+              <textarea id="project-description" rows="3" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none" placeholder="Enter project description"></textarea>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <input type="checkbox" id="project-favorite" class="w-4 h-4 rounded border-slate-700 bg-slate-900 text-primary-500 focus:ring-2 focus:ring-primary-500">
+              <label for="project-favorite" class="text-sm text-slate-300">Mark as favorite</label>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-3 mt-6">
+            <button type="submit" class="flex-1 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg">
+              Create Project
+            </button>
+            <button type="button" onclick="closeProjectModal()" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Task Modal -->
+<div id="task-modal" class="fixed inset-0 z-50 hidden">
+  <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeTaskModal()"></div>
+  <div class="fixed inset-0 overflow-y-auto">
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-lg p-6" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-semibold text-white">New Task</h3>
+          <button onclick="closeTaskModal()" class="text-slate-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        
+        <form id="task-form" onsubmit="createTask(event)">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Task Title</label>
+              <input type="text" id="task-title" required class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Enter task title">
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Project</label>
+                <select id="task-project" required class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                  <option value="">Select project</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Assignee</label>
+                <select id="task-assignee" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                  <option value="">Unassigned</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Priority</label>
+                <select id="task-priority" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Due Date</label>
+                <input type="date" id="task-due-date" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Description</label>
+              <textarea id="task-description" rows="3" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none" placeholder="Enter task description"></textarea>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-3 mt-6">
+            <button type="submit" class="flex-1 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg">
+              Create Task
+            </button>
+            <button type="button" onclick="closeTaskModal()" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Invite Member Modal -->
+<div id="invite-modal" class="fixed inset-0 z-50 hidden">
+  <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeInviteModal()"></div>
+  <div class="fixed inset-0 overflow-y-auto">
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-md p-6" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-semibold text-white">Invite Team Member</h3>
+          <button onclick="closeInviteModal()" class="text-slate-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        
+        <form id="invite-form" onsubmit="sendInvite(event)">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Email Address</label>
+              <input type="email" id="invite-email" required class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="colleague@example.com">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Role</label>
+              <select id="invite-role" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                <option value="member">Member</option>
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Personal Message (Optional)</label>
+              <textarea id="invite-message" rows="2" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none" placeholder="Add a personal message..."></textarea>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-3 mt-6">
+            <button type="submit" class="flex-1 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg">
+              Send Invite
+            </button>
+            <button type="button" onclick="closeInviteModal()" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Calendar Event Modal -->
+<div id="event-modal" class="fixed inset-0 z-50 hidden">
+  <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeEventModal()"></div>
+  <div class="fixed inset-0 overflow-y-auto">
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-md p-6" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-semibold text-white">New Event</h3>
+          <button onclick="closeEventModal()" class="text-slate-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        
+        <form id="event-form" onsubmit="createEvent(event)">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Event Title</label>
+              <input type="text" id="event-title" required class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Enter event title">
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Start Date</label>
+                <input type="date" id="event-start-date" required class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Start Time</label>
+                <input type="time" id="event-start-time" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">End Date</label>
+                <input type="date" id="event-end-date" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">End Time</label>
+                <input type="time" id="event-end-time" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Event Type</label>
+              <select id="event-type" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                <option value="meeting">Meeting</option>
+                <option value="deadline">Deadline</option>
+                <option value="reminder">Reminder</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Description</label>
+              <textarea id="event-description" rows="2" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none" placeholder="Enter event description"></textarea>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-3 mt-6">
+            <button type="submit" class="flex-1 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg">
+              Create Event
+            </button>
+            <button type="button" onclick="closeEventModal()" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

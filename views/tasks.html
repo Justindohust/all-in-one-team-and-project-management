@@ -1,0 +1,226 @@
+<!-- Tasks Page -->
+<div id="tasks-page" class="page hidden">
+  <!-- Tasks Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div class="flex items-center gap-3">
+      <button onclick="setTaskView('list')" id="task-view-list" class="p-2 bg-primary-500/20 text-primary-400 rounded-lg">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+        </svg>
+      </button>
+      <button onclick="setTaskView('kanban')" id="task-view-kanban" class="p-2 hover:bg-slate-700 text-slate-400 rounded-lg">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+        </svg>
+      </button>
+    </div>
+    <div class="flex items-center gap-3">
+      <select id="task-filter-project" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+        <option value="">All Projects</option>
+      </select>
+      <select id="task-filter-status" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+        <option value="">All Status</option>
+        <option value="todo">To Do</option>
+        <option value="in_progress">In Progress</option>
+        <option value="in_review">In Review</option>
+        <option value="done">Done</option>
+      </select>
+      <button onclick="openTaskModal()" class="flex items-center gap-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium rounded-lg">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        New Task
+      </button>
+    </div>
+  </div>
+  
+  <!-- Task List View -->
+  <div id="task-list-view" class="bg-slate-800/50 border border-slate-700/50 rounded-xl overflow-hidden">
+    <table class="w-full">
+      <thead class="bg-slate-800">
+        <tr class="text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+          <th class="px-4 py-3 w-8"><input type="checkbox" class="rounded border-slate-600 bg-slate-700"></th>
+          <th class="px-4 py-3">Task</th>
+          <th class="px-4 py-3">Project</th>
+          <th class="px-4 py-3">Assignee</th>
+          <th class="px-4 py-3">Due Date</th>
+          <th class="px-4 py-3">Priority</th>
+          <th class="px-4 py-3">Status</th>
+          <th class="px-4 py-3 w-10"></th>
+        </tr>
+      </thead>
+      <tbody id="task-list-body" class="divide-y divide-slate-700">
+        <tr class="hover:bg-slate-800/50 cursor-pointer">
+          <td class="px-4 py-3"><input type="checkbox" class="rounded border-slate-600 bg-slate-700"></td>
+          <td class="px-4 py-3">
+            <div class="font-medium text-white">Design new landing page</div>
+            <div class="text-xs text-slate-400">UI/UX Design</div>
+          </td>
+          <td class="px-4 py-3 text-sm text-slate-300">DigiFact Branding</td>
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-[10px] text-white font-semibold">JD</div>
+              <span class="text-sm text-slate-300">John Doe</span>
+            </div>
+          </td>
+          <td class="px-4 py-3 text-sm text-slate-300">Jan 28, 2026</td>
+          <td class="px-4 py-3"><span class="px-2 py-1 text-xs font-medium rounded-full bg-danger/20 text-danger">High</span></td>
+          <td class="px-4 py-3"><span class="px-2 py-1 text-xs font-medium rounded-full bg-info/20 text-info">In Progress</span></td>
+          <td class="px-4 py-3">
+            <button class="p-1 hover:bg-slate-700 rounded">
+              <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+              </svg>
+            </button>
+          </td>
+        </tr>
+        <tr class="hover:bg-slate-800/50 cursor-pointer">
+          <td class="px-4 py-3"><input type="checkbox" class="rounded border-slate-600 bg-slate-700"></td>
+          <td class="px-4 py-3">
+            <div class="font-medium text-white">API Integration Testing</div>
+            <div class="text-xs text-slate-400">Backend Development</div>
+          </td>
+          <td class="px-4 py-3 text-sm text-slate-300">DigiFact Framework</td>
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-full bg-gradient-to-br from-success to-info flex items-center justify-center text-[10px] text-white font-semibold">AS</div>
+              <span class="text-sm text-slate-300">Alice Smith</span>
+            </div>
+          </td>
+          <td class="px-4 py-3 text-sm text-slate-300">Jan 30, 2026</td>
+          <td class="px-4 py-3"><span class="px-2 py-1 text-xs font-medium rounded-full bg-warning/20 text-warning">Medium</span></td>
+          <td class="px-4 py-3"><span class="px-2 py-1 text-xs font-medium rounded-full bg-slate-600/50 text-slate-300">To Do</span></td>
+          <td class="px-4 py-3">
+            <button class="p-1 hover:bg-slate-700 rounded">
+              <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+              </svg>
+            </button>
+          </td>
+        </tr>
+        <tr class="hover:bg-slate-800/50 cursor-pointer">
+          <td class="px-4 py-3"><input type="checkbox" class="rounded border-slate-600 bg-slate-700"></td>
+          <td class="px-4 py-3">
+            <div class="font-medium text-white">Prepare TechXpo presentation</div>
+            <div class="text-xs text-slate-400">Marketing</div>
+          </td>
+          <td class="px-4 py-3 text-sm text-slate-300">TechXpo 2025</td>
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-full bg-gradient-to-br from-warning to-accent-500 flex items-center justify-center text-[10px] text-white font-semibold">MK</div>
+              <span class="text-sm text-slate-300">Mike Kim</span>
+            </div>
+          </td>
+          <td class="px-4 py-3 text-sm text-slate-300">Feb 5, 2026</td>
+          <td class="px-4 py-3"><span class="px-2 py-1 text-xs font-medium rounded-full bg-success/20 text-success">Low</span></td>
+          <td class="px-4 py-3"><span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-500/20 text-purple-400">In Review</span></td>
+          <td class="px-4 py-3">
+            <button class="p-1 hover:bg-slate-700 rounded">
+              <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+              </svg>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Task Kanban View (Hidden by default) -->
+  <div id="task-kanban-view" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- To Do Column -->
+    <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4" data-kanban-column="todo">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-slate-300 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+          To Do
+          <span class="text-xs bg-slate-700 px-2 py-0.5 rounded-full">3</span>
+        </h3>
+        <button onclick="openTaskModal()" class="p-1 hover:bg-slate-700 rounded">
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+        </button>
+      </div>
+      <div class="space-y-3" id="kanban-todo">
+        <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-3 cursor-pointer hover:border-primary-500/50">
+          <p class="text-sm text-white mb-2">API Integration Testing</p>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-400">Jan 30</span>
+            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-success to-info flex items-center justify-center text-[10px] text-white font-semibold">AS</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- In Progress Column -->
+    <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4" data-kanban-column="in_progress">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-info flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-info"></span>
+          In Progress
+          <span class="text-xs bg-info/20 text-info px-2 py-0.5 rounded-full">2</span>
+        </h3>
+        <button onclick="openTaskModal()" class="p-1 hover:bg-slate-700 rounded">
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+        </button>
+      </div>
+      <div class="space-y-3" id="kanban-in_progress">
+        <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-3 cursor-pointer hover:border-primary-500/50">
+          <p class="text-sm text-white mb-2">Design new landing page</p>
+          <div class="flex items-center justify-between">
+            <span class="px-2 py-0.5 text-xs rounded bg-danger/20 text-danger">High</span>
+            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-[10px] text-white font-semibold">JD</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- In Review Column -->
+    <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4" data-kanban-column="in_review">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-purple-400 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+          In Review
+          <span class="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full">1</span>
+        </h3>
+        <button onclick="openTaskModal()" class="p-1 hover:bg-slate-700 rounded">
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+        </button>
+      </div>
+      <div class="space-y-3" id="kanban-in_review">
+        <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-3 cursor-pointer hover:border-primary-500/50">
+          <p class="text-sm text-white mb-2">Prepare TechXpo presentation</p>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-400">Feb 5</span>
+            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-warning to-accent-500 flex items-center justify-center text-[10px] text-white font-semibold">MK</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Done Column -->
+    <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4" data-kanban-column="done">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-success flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-success"></span>
+          Done
+          <span class="text-xs bg-success/20 text-success px-2 py-0.5 rounded-full">5</span>
+        </h3>
+      </div>
+      <div class="space-y-3" id="kanban-done">
+        <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-3 cursor-pointer opacity-60">
+          <p class="text-sm text-slate-400 line-through mb-2">Setup CI/CD Pipeline</p>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-500">Jan 20</span>
+            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-[10px] text-white font-semibold">JD</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

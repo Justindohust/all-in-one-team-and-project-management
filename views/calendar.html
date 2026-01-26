@@ -1,0 +1,74 @@
+<!-- Calendar Page -->
+<div id="calendar-page" class="page hidden">
+  <div class="flex flex-col lg:flex-row gap-6">
+    <!-- Calendar Main -->
+    <div class="flex-1">
+      <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
+        <!-- Calendar Header -->
+        <div class="flex items-center justify-between mb-6">
+          <h2 id="calendar-month-title" class="text-xl font-semibold text-white">January 2026</h2>
+          <div class="flex items-center gap-2">
+            <button onclick="changeMonth(-1)" class="p-2 hover:bg-slate-700 rounded-lg">
+              <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <button onclick="goToToday()" class="px-4 py-2 bg-primary-500/20 text-primary-400 text-sm font-medium rounded-lg">Today</button>
+            <button onclick="changeMonth(1)" class="p-2 hover:bg-slate-700 rounded-lg">
+              <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <!-- Calendar Grid -->
+        <div class="grid grid-cols-7 gap-1">
+          <!-- Week days header -->
+          <div class="text-center text-xs font-medium text-slate-400 py-2">Sun</div>
+          <div class="text-center text-xs font-medium text-slate-400 py-2">Mon</div>
+          <div class="text-center text-xs font-medium text-slate-400 py-2">Tue</div>
+          <div class="text-center text-xs font-medium text-slate-400 py-2">Wed</div>
+          <div class="text-center text-xs font-medium text-slate-400 py-2">Thu</div>
+          <div class="text-center text-xs font-medium text-slate-400 py-2">Fri</div>
+          <div class="text-center text-xs font-medium text-slate-400 py-2">Sat</div>
+        </div>
+        <!-- Calendar days container -->
+        <div id="calendar-grid" class="grid grid-cols-7 gap-1">
+          <!-- Days will be rendered dynamically -->
+        </div>
+      </div>
+    </div>
+    
+    <!-- Upcoming Events Sidebar -->
+    <div class="w-full lg:w-80">
+      <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold text-white">Upcoming Events</h3>
+          <button onclick="openEventModal()" class="p-1.5 hover:bg-slate-700 rounded-lg text-primary-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+          </button>
+        </div>
+        <div id="upcoming-events" class="space-y-3">
+          <div class="p-3 bg-slate-900/50 border-l-4 border-danger rounded-r-lg">
+            <p class="text-sm font-medium text-white">Design new landing page</p>
+            <p class="text-xs text-slate-400 mt-1">Jan 28, 2026 • High Priority</p>
+          </div>
+          <div class="p-3 bg-slate-900/50 border-l-4 border-warning rounded-r-lg">
+            <p class="text-sm font-medium text-white">API Integration Testing</p>
+            <p class="text-xs text-slate-400 mt-1">Jan 30, 2026 • Medium Priority</p>
+          </div>
+          <div class="p-3 bg-slate-900/50 border-l-4 border-info rounded-r-lg">
+            <p class="text-sm font-medium text-white">TechXpo Presentation</p>
+            <p class="text-xs text-slate-400 mt-1">Feb 5, 2026 • Low Priority</p>
+          </div>
+          <div class="p-3 bg-slate-900/50 border-l-4 border-primary-500 rounded-r-lg">
+            <p class="text-sm font-medium text-white">Team Meeting</p>
+            <p class="text-xs text-slate-400 mt-1">Feb 10, 2026 • Weekly</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
