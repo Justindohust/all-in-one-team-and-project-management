@@ -85,24 +85,35 @@ DigiHub is a comprehensive team and project management platform designed to help
 
 ```
 all-in-one-team-and-project-management/
-├── 📄 index.html              # Main frontend HTML
+├── 📄 index.html              # Main frontend HTML (shell/layout)
 ├── 📄 docker-compose.yml      # Docker orchestration
 ├── 📄 Dockerfile              # Frontend Docker config
 ├── 📄 nginx.conf              # Nginx configuration
 ├── 📂 js/
-│   ├── api.js                 # API client
-│   └── app.js                 # Main app controller
-├── 📂 resources/              # Static assets
+│   ├── api.js                 # API client for backend communication
+│   ├── app.js                 # Main app controller & state management
+│   └── view-loader.js         # Dynamic view loading handler
+├── 📂 views/                  # Modular HTML view components
+│   ├── dashboard.html         # Dashboard overview page
+│   ├── projects.html          # Projects management page
+│   ├── tasks.html             # Task board & management page
+│   ├── calendar.html          # Calendar & events page
+│   ├── team.html              # Team directory page
+│   ├── messages.html          # Messaging & channels page
+│   ├── reports.html           # Reports & analytics page
+│   ├── settings.html          # Settings & preferences page
+│   └── modals.html            # Reusable modal components
+├── 📂 resources/              # Static assets (images, icons, etc.)
 └── 📂 backend/
     ├── 📄 Dockerfile          # Backend Docker config
     ├── 📄 package.json        # Node.js dependencies
-    ├── 📄 server.js           # Express server entry
+    ├── 📄 server.js           # Express server entry point
     ├── 📂 config/
     │   └── database.js        # Database configuration
     ├── 📂 database/
-    │   ├── init.js            # Database initialization
-    │   ├── schema.sql         # Database schema
-    │   └── seed.sql           # Seed data
+    │   ├── init.js            # Database initialization script
+    │   ├── schema.sql         # Database schema definitions
+    │   └── seed.sql           # Seed data for development
     ├── 📂 middleware/
     │   └── auth.js            # JWT authentication middleware
     └── 📂 routes/
