@@ -91,12 +91,21 @@ class ViewLoader {
 
   // Render the view content
   renderView(viewName, html) {
+    // Remove initial loading spinner if it exists (only has one child that's not a .page)
+    const children = Array.from(this.viewContainer.children);
+    children.forEach(child => {
+      if (!child.classList.contains('page')) {
+        child.remove();
+      }
+    });
+
     // Hide all existing pages first
     const existingPages = this.viewContainer.querySelectorAll('.page');
     existingPages.forEach(page => page.classList.add('hidden'));
 
     // Check if this page element already exists
     let pageElement = this.viewContainer.querySelector(`#${viewName}-page`);
+    const isNewPage = !pageElement;
     
     if (!pageElement) {
       // Create new page element
@@ -111,13 +120,13 @@ class ViewLoader {
     pageElement.classList.remove('hidden');
     this.currentView = viewName;
 
-    // Execute callbacks for this view
-    if (this.viewCallbacks.has(viewName)) {
+    // Execute callbacks for this view only if it's newly created
+    if (isNewPage && this.viewCallbacks.has(viewName)) {
       this.viewCallbacks.get(viewName).forEach(callback => callback());
     }
 
     // Dispatch custom event
-    window.dispatchEvent(new CustomEvent('viewLoaded', { detail: { viewName } }));
+    window.dispatchEvent(new CustomEvent('viewLoaded', { detail: { viewName, isNewPage } }));
   }
 
   // Get current view name

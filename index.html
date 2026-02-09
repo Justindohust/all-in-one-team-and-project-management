@@ -6,118 +6,17 @@
   <title>DigiHub - Team & Project Management</title>
   <meta name="description" content="Manage your team and projects efficiently with DigiHub">
   
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  
   <!-- Fonts: Plus Jakarta Sans (SaaS-friendly) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
   <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
-          },
-          colors: {
-            primary: {
-              DEFAULT: '#3B82F6',
-              50: '#EFF6FF',
-              100: '#DBEAFE',
-              200: '#BFDBFE',
-              300: '#93C5FD',
-              400: '#60A5FA',
-              500: '#3B82F6',
-              600: '#2563EB',
-              700: '#1D4ED8',
-              800: '#1E40AF',
-              900: '#1E3A8A',
-            },
-            accent: {
-              DEFAULT: '#F97316',
-              50: '#FFF7ED',
-              100: '#FFEDD5',
-              200: '#FED7AA',
-              300: '#FDBA74',
-              400: '#FB923C',
-              500: '#F97316',
-              600: '#EA580C',
-              700: '#C2410C',
-            },
-            success: '#22C55E',
-            warning: '#EAB308',
-            danger: '#EF4444',
-            info: '#0EA5E9',
-          },
-        },
-      },
-    }
-  </script>
-  
-  <style>
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 3px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #475569;
-    }
-
-    /* Smooth transitions */
-    * {
-      transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
-      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-      transition-duration: 200ms;
-    }
-
-    /* Respect reduced motion */
-    @media (prefers-reduced-motion: reduce) {
-      * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-      }
-    }
-
-    /* Page animations */
-    .page-enter {
-      animation: fadeInUp 0.3s ease-out;
-    }
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
-    /* Navigation styles */
-    .nav-item {
-      border-left: 3px solid transparent;
-      color: #94a3b8;
-    }
-    .nav-item:hover {
-      background-color: rgba(51, 65, 85, 0.5);
-    }
-    .nav-item.active {
-      background-color: rgba(59, 130, 246, 0.2);
-      color: #60a5fa;
-      border-left-color: #60a5fa;
-    }
-  </style>
+  <link href="css/output.css" rel="stylesheet">
 </head>
 <body class="font-sans antialiased bg-slate-900 text-slate-100 min-h-screen">
   <div id="app" class="flex min-h-screen">
