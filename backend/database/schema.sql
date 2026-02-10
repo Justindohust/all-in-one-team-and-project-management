@@ -88,11 +88,31 @@ CREATE TABLE project_members (
 );
 
 -- =====================
+-- MODULES (Project sub-components)
+-- =====================
+CREATE TABLE modules (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'completed', 'pending', 'archived')),
+    priority VARCHAR(10) DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
+    start_date DATE,
+    due_date DATE,
+    progress INT DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
+    sort_order INT DEFAULT 0,
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =====================
 -- TASKS
 -- =====================
 CREATE TABLE tasks (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    module_id UUID REFERENCES modules(id) ON DELETE CASCADE,
     parent_task_id UUID REFERENCES tasks(id) ON DELETE CASCADE,
     title VARCHAR(500) NOT NULL,
     description TEXT,

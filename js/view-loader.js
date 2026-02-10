@@ -54,9 +54,11 @@ class ViewLoader {
       return false;
     }
 
+    console.log('[ViewLoader] loadView start', { viewName, cached: this.loadedViews.has(viewName) });
+
     // Check if view is already loaded in cache
     if (this.loadedViews.has(viewName)) {
-      this.renderView(viewName, this.loadedViews.get(viewName));
+      this.renderView(viewName, this.loadedViews.get(viewName), true);
       return true;
     }
 
@@ -68,7 +70,7 @@ class ViewLoader {
       
       const html = await response.text();
       this.loadedViews.set(viewName, html);
-      this.renderView(viewName, html);
+      this.renderView(viewName, html, false);
       return true;
     } catch (error) {
       console.error(`Error loading view ${viewName}:`, error);
@@ -90,7 +92,9 @@ class ViewLoader {
   }
 
   // Render the view content
-  renderView(viewName, html) {
+  renderView(viewName, html, fromCache = false) {
+    console.log('[ViewLoader] renderView', { viewName, fromCache, htmlLength: html?.length });
+
     // Remove initial loading spinner if it exists (only has one child that's not a .page)
     const children = Array.from(this.viewContainer.children);
     children.forEach(child => {
@@ -99,8 +103,9 @@ class ViewLoader {
       }
     });
 
-    // Hide all existing pages first
-    const existingPages = this.viewContainer.querySelectorAll('.page');
+    // Hide all existing top-level pages (direct children only)
+    const existingPages = Array.from(this.viewContainer.children)
+      .filter(child => child.classList.contains('page'));
     existingPages.forEach(page => page.classList.add('hidden'));
 
     // Check if this page element already exists
@@ -114,10 +119,31 @@ class ViewLoader {
       pageElement.className = 'page';
       pageElement.innerHTML = html;
       this.viewContainer.appendChild(pageElement);
+    } else {
+      pageElement.innerHTML = html;
+    }
+
+    // If the fetched HTML already contains a root with the same id/class (most templates do),
+    // flatten it so we don't end up with nested `.page` wrappers that can stay hidden.
+    const innerRoot = pageElement.querySelector(`#${viewName}-page.page`);
+    if (innerRoot && innerRoot !== pageElement) {
+      pageElement.innerHTML = innerRoot.innerHTML;
     }
 
     // Show the page
     pageElement.classList.remove('hidden');
+    // If the loaded HTML contains its own `.page` wrapper (current templates do),
+    // make sure it isn't left hidden from previous navigations.
+    pageElement.querySelectorAll('.page').forEach(inner => inner.classList.remove('hidden'));
+
+    console.log('[ViewLoader] renderView done', {
+      viewName,
+      isNewPage,
+      hasHiddenClass: pageElement.classList.contains('hidden'),
+      childPagesHidden: Array.from(pageElement.querySelectorAll('.page')).some(p => p.classList.contains('hidden')),
+      displayStyle: getComputedStyle(pageElement).display,
+      containerChildren: this.viewContainer.children.length
+    });
     this.currentView = viewName;
 
     // Execute callbacks for this view only if it's newly created
@@ -168,6 +194,7 @@ const viewLoader = new ViewLoader();
 
 // Navigation function using view loader
 function navigateTo(pageId) {
+  console.log('[Nav] navigateTo', pageId);
   // Update sidebar active state
   document.querySelectorAll('.nav-item').forEach(item => {
     item.classList.remove('active', 'bg-primary-500/20', 'text-primary-400', 'border-primary-400');

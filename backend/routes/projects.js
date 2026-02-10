@@ -89,6 +89,25 @@ router.get('/:id', async (req, res, next) => {
       [id]
     );
     
+    // Get project modules with tasks
+    const modules = await db.query(
+      `SELECT m.*,
+              (SELECT COUNT(*) FROM tasks WHERE module_id = m.id) as task_count
+       FROM modules m
+       WHERE m.project_id = $1
+       ORDER BY m.sort_order, m.created_at`,
+      [id]
+    );
+    
+    // Get tasks for each module
+    for (const module of modules.rows) {
+      const tasks = await db.query(
+        `SELECT t.* FROM tasks t WHERE t.module_id = $1 ORDER BY t.sort_order, t.created_at`,
+        [module.id]
+      );
+      module.tasks = tasks.rows;
+    }
+    
     res.json({
       success: true,
       data: {
@@ -106,6 +125,18 @@ router.get('/:id', async (req, res, next) => {
         taskCount: parseInt(p.task_count),
         completedTaskCount: parseInt(p.completed_task_count),
         createdAt: p.created_at,
+        modules: modules.rows.map(m => ({
+          id: m.id,
+          name: m.name,
+          description: m.description,
+          status: m.status,
+          priority: m.priority,
+          startDate: m.start_date,
+          dueDate: m.due_date,
+          progress: m.progress,
+          taskCount: parseInt(m.task_count),
+          tasks: m.tasks || []
+        })),
         members: members.rows.map(m => ({
           id: m.id,
           email: m.email,

@@ -27,6 +27,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/projects', require('./routes/projects'));
 app.use('/api/project-groups', require('./routes/projectGroups'));
+app.use('/api/modules', require('./routes/modules'));
 app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/calendar', require('./routes/calendar'));
 app.use('/api/messages', require('./routes/messages'));

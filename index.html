@@ -187,6 +187,8 @@
   <script src="js/api.js"></script>
   <script src="js/view-loader.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/tree-view.js"></script>
+  <script src="js/projects.js"></script>
   
   <!-- TreeView Component -->
   <script>
@@ -332,8 +334,14 @@
   <script>
     // Wait for DOM to be ready
     document.addEventListener('DOMContentLoaded', async function() {
-      // Initialize DigiHub App first
-      window.app = new DigiHubApp();
+      if (window.__appBootstrapped) {
+        console.warn('[Bootstrap] Skipping duplicate bootstrap');
+        return;
+      }
+      window.__appBootstrapped = true;
+
+      // Reuse global app from app.js (already exposed as window.app)
+      window.app = window.app || new DigiHubApp();
       await app.init();
       
       // Initialize view loader
@@ -403,30 +411,27 @@
 
     // View initialization functions
     function initDashboard() {
-      console.log('Dashboard initialized');
+      console.log('[Dashboard] initDashboard called', {
+        projects: app?.state?.projectGroups?.length,
+        stats: app?.state?.dashboardStats,
+        containerExists: !!document.getElementById('dashboard-page')
+      });
       // Ensure data is loaded before initializing TreeView
       if (app.state.projectGroups && app.state.projectGroups.length > 0) {
         initDashboardTreeView();
+      } else {
+        console.log('[Dashboard] projectGroups empty when initDashboard ran');
       }
     }
 
     function initProjects() {
       console.log('Projects initialized');
-      // Ensure data is loaded before initializing TreeView
-      if (app.state.projectGroups && app.state.projectGroups.length > 0) {
+      // initProjectsTreeView is defined in projects.js
+      // It will be called automatically when projects.js loads
+      if (typeof initProjectsTreeView === 'function') {
         initProjectsTreeView();
       } else {
-        // Show loading state
-        const container = document.getElementById('projects-treeview-page');
-        if (container) {
-          container.innerHTML = '<div class="text-center py-8"><div class="loader mx-auto"></div><p class="text-slate-400 mt-4">Loading projects...</p></div>';
-        }
-        // Wait for data and then init
-        setTimeout(() => {
-          if (app.state.projectGroups && app.state.projectGroups.length > 0) {
-            initProjectsTreeView();
-          }
-        }, 1000);
+        console.error('initProjectsTreeView function not found');
       }
     }
 
@@ -497,35 +502,6 @@
       }));
       
       app.treeView = new TreeView(container, projectsData, {
-        onSelect: (project) => {
-          console.log('Selected project:', project);
-        },
-        onToggleFavorite: (project) => {
-          console.log('Toggle favorite:', project);
-        }
-      });
-    }
-
-    function initProjectsTreeView() {
-      const container = document.getElementById('projects-treeview-page');
-      if (!container) return;
-      
-      const projectsData = app.state.projectGroups.map(group => ({
-        id: group.id,
-        name: group.name,
-        color: group.color || '#3B82F6',
-        icon: group.icon || 'folder',
-        expanded: true,
-        projects: (group.projects || []).map(project => ({
-          id: project.id,
-          name: project.name,
-          status: project.status || 'active',
-          favorite: project.isFavorite || false,
-          progress: project.progress || 0
-        }))
-      }));
-      
-      app.treeViewPage = new TreeView(container, projectsData, {
         onSelect: (project) => {
           console.log('Selected project:', project);
         },

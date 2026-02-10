@@ -727,10 +727,6 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Create global app instance
+// Create global app instance and expose for other scripts
 const app = new DigiHubApp();
-
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  app.init();
-});
+window.app = app;

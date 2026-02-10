@@ -1,15 +1,41 @@
 <!-- Projects Page -->
 <div id="projects-page" class="page hidden">
-  <div class="flex items-center justify-end mb-6">
-    <button class="flex items-center gap-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium rounded-lg cursor-pointer" onclick="openProjectModal()">
+  <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center gap-3">
+      <button onclick="expandAllProjects()" class="px-3 py-2 text-sm bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors">
+        Expand All
+      </button>
+      <button onclick="collapseAllProjects()" class="px-3 py-2 text-sm bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors">
+        Collapse All
+      </button>
+    </div>
+    <button class="flex items-center gap-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium rounded-lg cursor-pointer" onclick="openTreeNodeModal(null, 'group')">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
       </svg>
-      New Project
+      New Group
     </button>
   </div>
   
-  <div id="projects-treeview-page" class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-    <!-- TreeView will be rendered here -->
+  <div class="flex gap-6">
+    <div class="flex-1 bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 min-h-[500px]" id="projects-treeview-page">
+      <!-- AdvancedTreeView will be rendered here -->
+    </div>
+    
+    <!-- Detail Panel -->
+    <div id="project-detail-panel" class="hidden w-96 bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 min-h-[500px]">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-white">Details</h3>
+        <button onclick="closeDetailPanel()" class="text-slate-400 hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div id="detail-content" class="space-y-4">
+        <!-- Content will be dynamically loaded -->
+      </div>
+    </div>
   </div>
 </div>

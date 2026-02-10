@@ -219,13 +219,13 @@ router.get('/:id', async (req, res, next) => {
 // Create task
 router.post('/', async (req, res, next) => {
   try {
-    const { projectId, title, description, status, priority, assigneeId, dueDate, estimatedHours, tags, createdBy } = req.body;
+    const { projectId, moduleId, title, description, status, priority, assigneeId, dueDate, estimatedHours, tags, createdBy } = req.body;
     
     const result = await db.query(
-      `INSERT INTO tasks (project_id, title, description, status, priority, assignee_id, due_date, estimated_hours, tags, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `INSERT INTO tasks (project_id, module_id, title, description, status, priority, assignee_id, due_date, estimated_hours, tags, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
-      [projectId, title, description, status || 'todo', priority || 'medium', assigneeId, dueDate, estimatedHours, tags, createdBy]
+      [projectId, moduleId, title, description, status || 'todo', priority || 'medium', assigneeId, dueDate, estimatedHours, tags, createdBy]
     );
     
     // Log activity

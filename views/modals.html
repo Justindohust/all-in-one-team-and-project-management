@@ -299,3 +299,137 @@
     </div>
   </div>
 </div>
+
+<!-- Tree Node Modal (Universal) -->
+<div id="tree-node-modal" class="fixed inset-0 z-50 hidden">
+  <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeTreeNodeModal()"></div>
+  <div class="fixed inset-0 overflow-y-auto">
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-lg p-6" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between mb-6">
+          <h3 id="tree-node-modal-title" class="text-xl font-semibold text-white">New Item</h3>
+          <button onclick="closeTreeNodeModal()" class="text-slate-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        
+        <form id="tree-node-form" onsubmit="saveTreeNode(event)">
+          <input type="hidden" id="node-id" value="">
+          <input type="hidden" id="node-parent-id" value="">
+          
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Type</label>
+              <select id="node-type" required class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                <option value="group">Group</option>
+                <option value="project">Project</option>
+                <option value="module">Module</option>
+                <option value="task">Task</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Name *</label>
+              <input type="text" id="node-name" required class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Enter name">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Description</label>
+              <textarea id="node-description" rows="3" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none" placeholder="Enter description"></textarea>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Status</label>
+                <select id="node-status" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                  <option value="active">Active</option>
+                  <option value="pending">Pending</option>
+                  <option value="completed">Completed</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Priority</label>
+                <select id="node-priority" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Start Date</label>
+                <input type="date" id="node-start-date" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Due Date</label>
+                <input type="date" id="node-due-date" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Assignees</label>
+              <select id="node-assignees" multiple class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" size="3">
+                <!-- Will be populated dynamically -->
+              </select>
+              <p class="text-xs text-slate-400 mt-1">Hold Ctrl/Cmd to select multiple</p>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-3 mt-6">
+            <button type="submit" class="flex-1 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg">
+              Save
+            </button>
+            <button type="button" onclick="closeTreeNodeModal()" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-confirm-modal" class="fixed inset-0 z-50 hidden">
+  <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeDeleteConfirmModal()"></div>
+  <div class="fixed inset-0 overflow-y-auto">
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-md p-6" onclick="event.stopPropagation()">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-12 h-12 bg-danger/20 rounded-full flex items-center justify-center flex-shrink-0">
+            <svg class="w-6 h-6 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-xl font-semibold text-white">Confirm Delete</h3>
+            <p class="text-sm text-slate-400 mt-1">This action cannot be undone</p>
+          </div>
+        </div>
+        
+        <div class="bg-slate-900 border border-slate-700 rounded-lg p-4 mb-6">
+          <p class="text-slate-300 text-sm" id="delete-confirm-message">
+            Are you sure you want to delete this item?
+          </p>
+        </div>
+        
+        <div class="flex items-center gap-3">
+          <button onclick="confirmDelete()" class="flex-1 px-4 py-2 bg-danger hover:bg-red-600 text-white font-medium rounded-lg">
+            Delete
+          </button>
+          <button onclick="closeDeleteConfirmModal()" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
