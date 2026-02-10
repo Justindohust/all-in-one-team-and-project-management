@@ -25,17 +25,22 @@ DigiHub is a comprehensive team and project management platform designed to help
 ## ✨ Features
 
 ### 📁 Project Management
+- **4-Level Project Hierarchy** - Project Groups → Projects → Modules → Submodules → Tasks
+- **Advanced Tree View** - Expandable/collapsible hierarchy with drag & drop
+- **Table View Mode** - Comprehensive table with 8 columns and sorting capabilities
+- **Detail Panel** - Rich side panel with 5 tabs (Overview, Activity, Files, Relations, Watch)
 - **Project Groups** - Organize projects into logical groups
-- **Project Tracking** - Track progress, status, and deadlines
+- **Project Tracking** - Real-time progress tracking with automatic calculation
 - **Favorites** - Quick access to frequently used projects
 - **Project Members** - Assign team members to projects
 
 ### ✅ Task Management
 - **Task Board** - Kanban-style task organization (Todo, In Progress, In Review, Done)
-- **Task Hierarchy** - Support for subtasks and parent tasks
-- **Priority Levels** - Low, Medium, High priority settings
+- **Task Hierarchy** - Support for subtasks and parent tasks within submodules
+- **Priority Levels** - Urgent, High, Medium, Low priority settings
 - **Task Assignments** - Assign tasks to team members
 - **Due Dates & Time Tracking** - Estimated and actual hours tracking
+- **Progress Indicators** - Visual progress bars for all hierarchy levels
 - **Comments & Attachments** - Collaborate on tasks with comments and files
 
 ### 📅 Calendar & Events
@@ -89,41 +94,62 @@ all-in-one-team-and-project-management/
 ├── 📄 docker-compose.yml      # Docker orchestration
 ├── 📄 Dockerfile              # Frontend Docker config
 ├── 📄 nginx.conf              # Nginx configuration
-├── 📂 js/
+├── � .editorconfig           # Editor configuration
+├── 📂 docs/                   # 📚 Documentation
+│   ├── README.md              # Documentation index
+│   ├── PROJECTS_MODULE.md     # Projects module documentation
+│   ├── PROJECTS_MODULE_ENHANCED.md  # Enhanced features guide
+│   └── COMMON_ERRORS.md       # Troubleshooting guide
+├── 📂 archive/                # 📦 Archived files
+│   └── index-backup.html      # Backup files
+├── 📂 css/
+│   └── input.css              # Tailwind CSS source
+├── 📂 js/                     # 🎯 Frontend JavaScript
+│   ├── README.md              # Frontend modules guide
 │   ├── api.js                 # API client for backend communication
 │   ├── app.js                 # Main app controller & state management
-│   └── view-loader.js         # Dynamic view loading handler
+│   ├── view-loader.js         # Dynamic view loading handler
+│   ├── projects.js            # Projects CRUD & tree view logic
+│   ├── projects-table-view.js # Table view renderer & detail panel
+│   └── tree-view.js           # Advanced tree view component
 ├── 📂 views/                  # Modular HTML view components
 │   ├── dashboard.html         # Dashboard overview page
-│   ├── projects.html          # Projects management page
+│   ├── projects.html          # Projects management page (enhanced)
 │   ├── tasks.html             # Task board & management page
 │   ├── calendar.html          # Calendar & events page
 │   ├── team.html              # Team directory page
 │   ├── messages.html          # Messaging & channels page
 │   ├── reports.html           # Reports & analytics page
 │   ├── settings.html          # Settings & preferences page
-│   └── modals.html            # Reusable modal components
+│   ├── modals.html            # Reusable modal components
+│   └── project-detail-panel.html  # Project detail panel template
 ├── 📂 resources/              # Static assets (images, icons, etc.)
-└── 📂 backend/
+└── 📂 backend/                # 🚀 Backend Server
     ├── 📄 Dockerfile          # Backend Docker config
     ├── 📄 package.json        # Node.js dependencies
     ├── 📄 server.js           # Express server entry point
     ├── 📂 config/
     │   └── database.js        # Database configuration
-    ├── 📂 database/
+    ├── 📂 database/           # 🗄️ Database
+    │   ├── README.md          # Database documentation
     │   ├── init.js            # Database initialization script
     │   ├── schema.sql         # Database schema definitions
-    │   └── seed.sql           # Seed data for development
+    │   ├── seed.sql           # Seed data for development
+    │   ├── 20260101000001-add-modules.sql       # Migration: Add modules
+    │   └── 20260210000001-add-submodules.sql    # Migration: Add submodules
     ├── 📂 middleware/
     │   └── auth.js            # JWT authentication middleware
-    └── 📂 routes/
+    └── 📂 routes/             # 🛣️ API Routes
+        ├── README.md          # API routes documentation
         ├── auth.js            # Authentication routes
         ├── calendar.js        # Calendar events routes
         ├── messages.js        # Messaging routes
-        ├── projectGroups.js   # Project groups routes
+        ├── modules.js         # Modules CRUD routes
+        ├── projectGroups.js   # Project groups routes (enhanced)
         ├── projects.js        # Projects routes
         ├── reports.js         # Reports routes
         ├── settings.js        # Settings routes
+        ├── submodules.js      # Submodules CRUD routes
         ├── tasks.js           # Tasks routes
         ├── team.js            # Team management routes
         └── users.js           # User management routes
@@ -168,6 +194,10 @@ all-in-one-team-and-project-management/
    
    # Seed data (optional)
    psql -d digihub -f backend/database/seed.sql
+   
+   # Run migrations (in order)
+   psql -d digihub -f backend/database/20260101000001-add-modules.sql
+   psql -d digihub -f backend/database/20260210000001-add-submodules.sql
    ```
 
 2. **Setup Backend**
@@ -238,10 +268,34 @@ NODE_ENV=development
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/project-groups` | Get all project groups |
+| GET | `/api/project-groups` | Get all project groups with full hierarchy |
 | POST | `/api/project-groups` | Create project group |
 | PUT | `/api/project-groups/:id` | Update project group |
 | DELETE | `/api/project-groups/:id` | Delete project group |
+
+### Modules
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/modules/project/:projectId` | Get all modules for a project |
+| GET | `/api/modules/:id` | Get module by ID |
+| POST | `/api/modules` | Create new module |
+| PUT | `/api/modules/:id` | Update module |
+| DELETE | `/api/modules/:id` | Delete module |
+| PATCH | `/api/modules/:id/move` | Move module to another project |
+| PATCH | `/api/modules/:id/progress` | Update module progress |
+
+### Submodules
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/submodules/module/:moduleId` | Get all submodules for a module |
+| GET | `/api/submodules/:id` | Get submodule by ID |
+| POST | `/api/submodules` | Create new submodule |
+| PUT | `/api/submodules/:id` | Update submodule |
+| DELETE | `/api/submodules/:id` | Delete submodule |
+| PATCH | `/api/submodules/:id/move` | Move submodule to another module |
+| PATCH | `/api/submodules/:id/progress` | Update submodule progress |
 
 ### Tasks
 
@@ -325,13 +379,37 @@ After seeding the database, you can login with:
 |-------|----------|------|
 | john@digihub.io | password123 | Admin |
 
+## 📚 Documentation
+
+Comprehensive documentation is available in the `docs/` directory:
+
+- **[Documentation Index](docs/README.md)** - Overview of all documentation
+- **[Projects Module Guide](docs/PROJECTS_MODULE.md)** - Original projects documentation
+- **[Enhanced Features Guide](docs/PROJECTS_MODULE_ENHANCED.md)** - 4-level hierarchy & advanced features
+- **[Common Errors](docs/COMMON_ERRORS.md)** - Troubleshooting guide
+
+Additional technical documentation:
+
+- **[Backend Routes](backend/routes/README.md)** - API endpoints reference
+- **[Frontend Modules](js/README.md)** - JavaScript modules overview
+- **[Database Guide](backend/database/README.md)** - Schema, migrations, and best practices
+
 ## 🤝 Contributing
 
+We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on:
+- Development workflow
+- Coding standards
+- Commit message format
+- Pull request process
+
+Quick steps:
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+3. Commit your changes (`git commit -m 'feat: add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## 📄 License
 

@@ -9,6 +9,10 @@ let deleteCallback = null;
 
 // Initialize Projects Tree View
 function initProjectsTreeView() {
+  // Initialize table view by default
+  initProjectsTableView();
+  
+  // Old tree view code kept for backward compatibility
   const container = document.getElementById('projects-treeview-page');
   if (!container) {
     console.error('Projects container not found');
@@ -17,14 +21,10 @@ function initProjectsTreeView() {
   
   // Check if data is loaded
   if (!app.state.projectGroups || app.state.projectGroups.length === 0) {
-    container.innerHTML = '<div class="text-center py-8"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div><p class="text-slate-400">Loading projects...</p></div>';
-    
     // Wait and retry
     setTimeout(() => {
       if (app.state.projectGroups && app.state.projectGroups.length > 0) {
         initProjectsTreeView();
-      } else {
-        container.innerHTML = '<div class="text-center py-8 text-slate-400"><svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg><p class="text-sm">No project groups yet</p><button onclick="openTreeNodeModal(null, \'group\')" class="mt-4 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm">Create First Group</button></div>';
       }
     }, 1000);
     return;
@@ -104,11 +104,38 @@ function transformModuleToTree(module) {
     name: module.name,
     type: 'module',
     status: module.status || 'active',
-    count: module.tasks?.length || 0
+    count: 0
   };
   
-  if (module.tasks && module.tasks.length > 0) {
+  // Check for submodules first
+  if (module.submodules && module.submodules.length > 0) {
+    node.count = module.submodules.length;
+    node.children = module.submodules.map(submodule => transformSubmoduleToTree(submodule));
+  } else if (module.tasks && module.tasks.length > 0) {
+    // If no submodules, add tasks directly to module
+    node.count = module.tasks.length;
     node.children = module.tasks.map(task => ({
+      id: `task-${task.id}`,
+      name: task.name || task.title,
+      type: 'task',
+      status: task.status || 'pending'
+    }));
+  }
+  
+  return node;
+}
+
+function transformSubmoduleToTree(submodule) {
+  const node = {
+    id: `submodule-${submodule.id}`,
+    name: submodule.name,
+    type: 'submodule',
+    status: submodule.status || 'active',
+    count: submodule.tasks?.length || 0
+  };
+  
+  if (submodule.tasks && submodule.tasks.length > 0) {
+    node.children = submodule.tasks.map(task => ({
       id: `task-${task.id}`,
       name: task.name || task.title,
       type: 'task',
@@ -138,6 +165,7 @@ function showDetailPanel(node) {
     group: 'text-primary-400',
     project: 'text-blue-400',
     module: 'text-purple-400',
+    submodule: 'text-indigo-400',
     task: 'text-green-400'
   };
   
@@ -145,6 +173,7 @@ function showDetailPanel(node) {
     group: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>',
     project: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>',
     module: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>',
+    submodule: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>',
     task: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>'
   };
   
@@ -485,11 +514,25 @@ async function createNodeInAPI(type, data, parentType, parentId) {
           due_date: data.dueDate
         };
         break;
+      case 'submodule':
+        endpoint = '/api/submodules';
+        payload = {
+          module_id: parentId ? parentId.split('-')[1] : null,
+          name: data.name,
+          description: data.description,
+          status: data.status,
+          priority: data.priority,
+          start_date: data.startDate,
+          due_date: data.dueDate
+        };
+        break;
       case 'task':
+        const parentRealId = parentId ? parentId.split('-')[1] : null;
         endpoint = '/api/tasks';
         payload = {
-          moduleId: parentId ? parentId.split('-')[1] : null,
-          projectId: null, // Will be set by backend based on module
+          moduleId: parentType === 'module' ? parentRealId : null,
+          submoduleId: parentType === 'submodule' ? parentRealId : null,
+          projectId: null, // Will be set by backend based on module/submodule
           title: data.name,
           description: data.description,
           status: data.status === 'active' ? 'todo' : data.status,
@@ -559,6 +602,17 @@ async function updateNodeInAPI(type, id, data) {
           due_date: data.dueDate
         };
         break;
+      case 'submodule':
+        endpoint = `/api/submodules/${id}`;
+        payload = {
+          name: data.name,
+          description: data.description,
+          status: data.status,
+          priority: data.priority,
+          start_date: data.startDate,
+          due_date: data.dueDate
+        };
+        break;
       case 'task':
         endpoint = `/api/tasks/${id}`;
         payload = {
@@ -610,6 +664,9 @@ async function deleteNodeFromAPI(type, id) {
       case 'module':
         endpoint = `/api/modules/${id}`;
         break;
+      case 'submodule':
+        endpoint = `/api/submodules/${id}`;
+        break;
       case 'task':
         endpoint = `/api/tasks/${id}`;
         break;
@@ -649,15 +706,23 @@ async function moveNodeInAPI(draggedType, draggedId, targetType, targetId) {
     } else if (draggedType === 'module' && targetType === 'project') {
       endpoint = `/api/modules/${draggedId}/move`;
       payload = { project_id: targetId };
-    } else if (draggedType === 'task' && targetType === 'module') {
+    } else if (draggedType === 'submodule' && targetType === 'module') {
+      endpoint = `/api/submodules/${draggedId}/move`;
+      payload = { module_id: targetId };
+    } else if (draggedType === 'task' && (targetType === 'module' || targetType === 'submodule')) {
       endpoint = `/api/tasks/${draggedId}`;
-      payload = { moduleId: targetId };
+      if (targetType === 'module') {
+        payload = { moduleId: targetId, submoduleId: null };
+      } else {
+        payload = { submoduleId: targetId, moduleId: null };
+      }
     } else {
       throw new Error('Invalid move operation');
     }
     
+    const method = draggedType === 'module' || draggedType === 'submodule' ? 'PATCH' : 'PUT';
     const response = await fetch(endpoint, {
-      method: draggedType === 'module' ? 'PATCH' : 'PUT',
+      method: method,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -773,7 +838,8 @@ function getChildType(parentType) {
   const typeMap = {
     group: 'project',
     project: 'module',
-    module: 'task'
+    module: 'submodule',
+    submodule: 'task'
   };
   return typeMap[parentType] || 'task';
 }
@@ -782,7 +848,8 @@ function isValidMove(draggedType, targetType) {
   const validMoves = {
     project: ['group'],
     module: ['project'],
-    task: ['module']
+    submodule: ['module'],
+    task: ['module', 'submodule']
   };
   return validMoves[draggedType]?.includes(targetType);
 }

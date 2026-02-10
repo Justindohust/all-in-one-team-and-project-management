@@ -1,40 +1,131 @@
 <!-- Projects Page -->
 <div id="projects-page" class="page hidden">
-  <div class="flex items-center justify-between mb-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-2xl font-bold text-white">All open</h2>
     <div class="flex items-center gap-3">
-      <button onclick="expandAllProjects()" class="px-3 py-2 text-sm bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors">
-        Expand All
+      <button onclick="openTreeNodeModal(null, 'project')" class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg cursor-pointer transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Create
       </button>
-      <button onclick="collapseAllProjects()" class="px-3 py-2 text-sm bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors">
-        Collapse All
-      </button>
-    </div>
-    <button class="flex items-center gap-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium rounded-lg cursor-pointer" onclick="openTreeNodeModal(null, 'group')">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-      </svg>
-      New Group
-    </button>
-  </div>
-  
-  <div class="flex gap-6">
-    <div class="flex-1 bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 min-h-[500px]" id="projects-treeview-page">
-      <!-- AdvancedTreeView will be rendered here -->
-    </div>
-    
-    <!-- Detail Panel -->
-    <div id="project-detail-panel" class="hidden w-96 bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 min-h-[500px]">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold text-white">Details</h3>
-        <button onclick="closeDetailPanel()" class="text-slate-400 hover:text-white">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      
+      <!-- View Controls -->
+      <div class="flex items-center gap-2 bg-slate-800 rounded-lg p-1">
+        <button onclick="setProjectView('table')" id="view-table-btn" class="px-3 py-1.5 text-sm bg-slate-700 text-white rounded transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+          </svg>
+        </button>
+        <button onclick="setProjectView('tree')" id="view-tree-btn" class="px-3 py-1.5 text-sm text-slate-400 hover:text-white rounded transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
           </svg>
         </button>
       </div>
       
-      <div id="detail-content" class="space-y-4">
+      <button class="p-2 text-slate-400 hover:text-white transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+  
+  <!-- Filter Bar -->
+  <div class="flex items-center gap-3 mb-4">
+    <div class="flex items-center gap-2 text-sm">
+      <label class="text-slate-400">Include projects:</label>
+      <select id="project-filter" class="px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+        <option value="all">1</option>
+      </select>
+    </div>
+    
+    <div class="flex items-center gap-2 ml-auto">
+      <label class="text-slate-400 text-sm">Baseline:</label>
+      <button class="px-3 py-1.5 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white text-sm rounded-lg transition-colors">
+        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      
+      <label class="text-slate-400 text-sm">Filter:</label>
+      <button class="px-3 py-1.5 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white text-sm rounded-lg transition-colors">
+        1
+        <svg class="w-4 h-4 inline ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+  
+  <!-- Main Content Area -->
+  <div class="flex gap-0 h-[calc(100vh-220px)]">
+    <!-- Table View Container -->
+    <div id="table-view-container" class="flex-1 bg-slate-800/50 border border-slate-700/50 rounded-l-xl overflow-hidden flex flex-col">
+      <!-- Table Header -->
+      <div class="bg-slate-800/80 border-b border-slate-700 px-4 py-3 flex items-center gap-4 text-sm font-medium text-slate-400 sticky top-0 z-10">
+        <div class="w-16">ID</div>
+        <div class="flex-1 min-w-[300px]">SUBJECT</div>
+        <div class="w-32">TYPE</div>
+        <div class="w-32">STATUS</div>
+        <div class="w-32">ASSIGNEE</div>
+        <div class="w-32">PRIORITY</div>
+        <div class="w-32">START DATE</div>
+        <div class="w-32">FIN</div>
+      </div>
+      
+      <!-- Table Body -->
+      <div id="projects-table-body" class="flex-1 overflow-y-auto">
         <!-- Content will be dynamically loaded -->
+        <div class="flex items-center justify-center h-64 text-slate-400">
+          <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+            <p>Loading projects...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Detail Panel (Initially hidden, slides in when item selected) -->
+    <div id="project-detail-panel" class="hidden w-[500px] bg-slate-800/50 border-l border-slate-700/50 rounded-r-xl overflow-hidden flex flex-col">
+      <!-- Panel Header with Tabs -->
+      <div class="bg-slate-800/80 border-b border-slate-700 px-4 py-3">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-lg font-semibold text-white">Details</h3>
+          <button onclick="closeDetailPanel()" class="text-slate-400 hover:text-white transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="flex items-center gap-2 border-b border-slate-700 -mb-px">
+          <button onclick="switchDetailTab('overview')" class="detail-tab active px-4 py-2 text-sm font-medium text-primary-400 border-b-2 border-primary-400 transition-colors" data-tab="overview">
+            OVERVIEW
+          </button>
+          <button onclick="switchDetailTab('activity')" class="detail-tab px-4 py-2 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors" data-tab="activity">
+            ACTIVITY
+          </button>
+          <button onclick="switchDetailTab('files')" class="detail-tab px-4 py-2 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors" data-tab="files">
+            FILES
+          </button>
+          <button onclick="switchDetailTab('relations')" class="detail-tab px-4 py-2 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors" data-tab="relations">
+            RELATIONS <span class="ml-1 text-xs">(1)</span>
+          </button>
+          <button onclick="switchDetailTab('watch')" class="detail-tab px-4 py-2 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors" data-tab="watch">
+            WATCH
+          </button>
+        </div>
+      </div>
+      
+      <!-- Panel Content -->
+      <div class="flex-1 overflow-y-auto p-4">
+        <div id="detail-content">
+          <!-- Content will be dynamically loaded -->
+        </div>
       </div>
     </div>
   </div>

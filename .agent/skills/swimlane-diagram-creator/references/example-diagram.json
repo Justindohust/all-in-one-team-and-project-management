@@ -1,0 +1,415 @@
+{
+  "phases": [
+    {
+      "id": "p1",
+      "name": "Phase 1",
+      "width": 300
+    },
+    {
+      "id": "p2",
+      "name": "Phase 2",
+      "width": 400
+    }
+  ],
+  "roles": [
+    {
+      "id": "r1",
+      "name": "Role A",
+      "icon": "fa-user",
+      "color": "#3498db",
+      "height": 180,
+      "positions": [],
+      "personnel": []
+    },
+    {
+      "id": "r2",
+      "name": "Role B",
+      "icon": "fa-cog",
+      "color": "#27ae60",
+      "height": 200,
+      "positions": [],
+      "personnel": []
+    },
+    {
+      "id": "r3",
+      "name": "Role C",
+      "icon": "fa-check",
+      "color": "#e74c3c",
+      "height": 400,
+      "positions": [],
+      "personnel": []
+    }
+  ],
+  "nodes": [
+    {
+      "id": "n_p1_start",
+      "type": "start-end",
+      "operation": "external",
+      "label": "Start",
+      "x": 344,
+      "y": 142,
+      "desc": "Process start point"
+    },
+    {
+      "id": "n_p1_task1",
+      "type": "task",
+      "operation": "external",
+      "label": "Task A1",
+      "x": 302,
+      "y": 197,
+      "desc": "First task in role A"
+    },
+    {
+      "id": "n_p1_task2",
+      "type": "task",
+      "operation": "external",
+      "label": "Task B1",
+      "x": 334,
+      "y": 262,
+      "desc": "Task in role B"
+    },
+    {
+      "id": "n_p1_task3",
+      "type": "task",
+      "operation": "external",
+      "label": "Task B2",
+      "x": 410,
+      "y": 340,
+      "desc": "Another task in role B"
+    },
+    {
+      "id": "n_p1_decision",
+      "type": "decision",
+      "operation": "external",
+      "label": "Check?",
+      "x": 264,
+      "y": 439,
+      "desc": "Decision point"
+    },
+    {
+      "id": "n_p1_ok_branch",
+      "type": "task",
+      "operation": "external",
+      "label": "OK Path",
+      "x": 398,
+      "y": 454,
+      "desc": "Path when check passes"
+    },
+    {
+      "id": "n_p1_ng_task1",
+      "type": "task",
+      "operation": "external",
+      "label": "NG Handler",
+      "x": 275,
+      "y": 714,
+      "desc": "Handle failure case"
+    },
+    {
+      "id": "n_p1_ng_task2",
+      "type": "task",
+      "operation": "external",
+      "label": "Correction",
+      "x": 255,
+      "y": 768,
+      "desc": "Corrective action"
+    },
+    {
+      "id": "n_p1_end",
+      "type": "start-end",
+      "operation": "external",
+      "label": "End A",
+      "x": 253,
+      "y": 904,
+      "desc": "End of NG path"
+    },
+    {
+      "id": "n_p2_start",
+      "type": "start-end",
+      "operation": "external",
+      "label": "Start",
+      "x": 687,
+      "y": 141,
+      "desc": "Process start"
+    },
+    {
+      "id": "n_p2_task1",
+      "type": "task",
+      "operation": "external",
+      "label": "Task A1",
+      "x": 646,
+      "y": 203,
+      "desc": "First task"
+    },
+    {
+      "id": "n_p2_task2",
+      "type": "task",
+      "operation": "external",
+      "label": "Task B1",
+      "x": 679,
+      "y": 261,
+      "desc": "Task in role B"
+    },
+    {
+      "id": "n_p2_auto",
+      "type": "task",
+      "operation": "mes-action",
+      "label": "Auto Task",
+      "x": 556,
+      "y": 330,
+      "desc": "Automated task"
+    },
+    {
+      "id": "n_p2_task3",
+      "type": "task",
+      "operation": "external",
+      "label": "Task B2",
+      "x": 784,
+      "y": 331,
+      "desc": "Manual task"
+    },
+    {
+      "id": "n_p2_confirm",
+      "type": "task",
+      "operation": "mes-action",
+      "label": "Confirm",
+      "x": 757,
+      "y": 392,
+      "desc": "Confirmation step"
+    },
+    {
+      "id": "n_p2_process",
+      "type": "task",
+      "operation": "mes-action",
+      "label": "Process",
+      "x": 586,
+      "y": 450,
+      "desc": "Main processing"
+    },
+    {
+      "id": "n_p2_check",
+      "type": "decision",
+      "operation": "external",
+      "label": "Verify",
+      "x": 574,
+      "y": 510,
+      "desc": "Verification step"
+    },
+    {
+      "id": "n_p2_record",
+      "type": "task",
+      "operation": "mes-action",
+      "label": "Record Result",
+      "x": 569,
+      "y": 590,
+      "desc": "Record outcome"
+    },
+    {
+      "id": "n_p2_approve",
+      "type": "decision",
+      "operation": "mes-action",
+      "label": "Approve?",
+      "x": 557,
+      "y": 631,
+      "desc": "Approval decision",
+      "style": {
+        "width": 120,
+        "height": 60
+      }
+    },
+    {
+      "id": "n_p2_ok_action",
+      "type": "task",
+      "operation": "external",
+      "label": "Complete",
+      "x": 774,
+      "y": 458,
+      "desc": "Completion step"
+    },
+    {
+      "id": "n_p2_ok_auto",
+      "type": "task",
+      "operation": "mes-auto",
+      "label": "Auto Finalize",
+      "x": 753,
+      "y": 634,
+      "desc": "Automatic finalization",
+      "style": {
+        "width": 130,
+        "height": 55,
+        "textAlign": "center"
+      }
+    },
+    {
+      "id": "n_p2_ng_handler",
+      "type": "task",
+      "operation": "external",
+      "label": "Handle Issue",
+      "x": 583,
+      "y": 720,
+      "desc": "Issue handling"
+    },
+    {
+      "id": "n_p2_ng_correct",
+      "type": "task",
+      "operation": "external",
+      "label": "Correct",
+      "x": 563,
+      "y": 774,
+      "desc": "Correction action"
+    },
+    {
+      "id": "n_p2_end",
+      "type": "start-end",
+      "operation": "external",
+      "label": "End B",
+      "x": 561,
+      "y": 910,
+      "desc": "End point"
+    }
+  ],
+  "connections": [
+    {
+      "from": "n_p1_start",
+      "to": "n_p1_task1",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "n_p1_task1",
+      "to": "n_p1_task2",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "n_p1_task2",
+      "to": "n_p1_task3",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "n_p1_task3",
+      "to": "n_p1_decision",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "n_p1_decision",
+      "to": "n_p1_ok_branch",
+      "fromSide": "right",
+      "toSide": "left",
+      "label": "OK"
+    },
+    {
+      "from": "n_p1_decision",
+      "to": "n_p1_ng_task1",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "label": "NG"
+    },
+    {
+      "from": "n_p1_ng_task1",
+      "to": "n_p1_ng_task2",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "n_p1_ng_task2",
+      "to": "n_p1_end",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "n_p2_start",
+      "to": "n_p2_task1",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "n_p2_task1",
+      "to": "n_p2_task2",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "n_p2_task2",
+      "to": "n_p2_auto",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "n_p2_task2",
+      "to": "n_p2_task3",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "n_p2_task3",
+      "to": "n_p2_confirm",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "n_p2_auto",
+      "to": "n_p2_process",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "n_p2_process",
+      "to": "n_p2_check",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "n_p2_check",
+      "to": "n_p2_record",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "n_p2_record",
+      "to": "n_p2_approve",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "n_p2_approve",
+      "to": "n_p2_ng_handler",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "label": "NG"
+    },
+    {
+      "from": "n_p2_approve",
+      "to": "n_p2_ok_auto",
+      "fromSide": "right",
+      "toSide": "left",
+      "label": "OK"
+    },
+    {
+      "from": "n_p2_ng_handler",
+      "to": "n_p2_ng_correct",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "n_p2_ng_correct",
+      "to": "n_p2_end",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "n_p2_ok_auto",
+      "to": "n_p2_ok_action",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "from": "n_p2_ok_action",
+      "to": "n_p2_confirm",
+      "fromSide": "top",
+      "toSide": "bottom"
+    }
+  ],
+  "note": "Example swimlane diagram with typical patterns"
+}

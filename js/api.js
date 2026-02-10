@@ -181,6 +181,88 @@ class DigiHubAPI {
   }
 
   // ==================
+  // MODULES
+  // ==================
+  async getModules(projectId) {
+    return this.request(`/modules/project/${projectId}`);
+  }
+
+  async getModule(id) {
+    return this.request(`/modules/${id}`);
+  }
+
+  async createModule(data) {
+    return this.request('/modules', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...data,
+        created_by: this.currentUser?.id
+      })
+    });
+  }
+
+  async updateModule(id, data) {
+    return this.request(`/modules/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async deleteModule(id) {
+    return this.request(`/modules/${id}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async moveModule(id, projectId) {
+    return this.request(`/modules/${id}/move`, {
+      method: 'PATCH',
+      body: JSON.stringify({ project_id: projectId })
+    });
+  }
+
+  // ==================
+  // SUBMODULES
+  // ==================
+  async getSubmodules(moduleId) {
+    return this.request(`/submodules/module/${moduleId}`);
+  }
+
+  async getSubmodule(id) {
+    return this.request(`/submodules/${id}`);
+  }
+
+  async createSubmodule(data) {
+    return this.request('/submodules', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...data,
+        created_by: this.currentUser?.id
+      })
+    });
+  }
+
+  async updateSubmodule(id, data) {
+    return this.request(`/submodules/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async deleteSubmodule(id) {
+    return this.request(`/submodules/${id}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async moveSubmodule(id, moduleId) {
+    return this.request(`/submodules/${id}/move`, {
+      method: 'PATCH',
+      body: JSON.stringify({ module_id: moduleId })
+    });
+  }
+
+  // ==================
   // TASKS
   // ==================
   async getTasks(filters = {}) {

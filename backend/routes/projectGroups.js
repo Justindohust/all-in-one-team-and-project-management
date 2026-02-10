@@ -20,6 +20,30 @@ router.get('/', async (req, res, next) => {
        ORDER BY p.is_favorite DESC, p.name`
     );
     
+    // Get all modules
+    const modulesResult = await db.query(
+      `SELECT id, project_id, name, description, status, priority, start_date, due_date, progress, sort_order
+       FROM modules
+       ORDER BY sort_order, name`
+    );
+    
+    // Get all submodules
+    const submodulesResult = await db.query(
+      `SELECT id, module_id, name, description, status, priority, start_date, due_date, progress, sort_order
+       FROM submodules
+       ORDER BY sort_order, name`
+    );
+    
+    // Get all tasks
+    const tasksResult = await db.query(
+      `SELECT t.id, t.project_id, t.module_id, t.submodule_id, t.title, t.description, t.status, t.priority, 
+              t.due_date, t.assignee_id, t.sort_order,
+              u.first_name || ' ' || u.last_name as assignee_name
+       FROM tasks t
+       LEFT JOIN users u ON t.assignee_id = u.id
+       ORDER BY t.sort_order, t.created_at`
+    );
+    
     const groups = groupsResult.rows.map(group => ({
       id: group.id,
       name: group.name,
@@ -30,21 +54,97 @@ router.get('/', async (req, res, next) => {
       sortOrder: group.sort_order,
       projects: projectsResult.rows
         .filter(p => p.group_id === group.id)
-        .map(p => ({
-          id: p.id,
-          groupId: p.group_id,
-          name: p.name,
-          description: p.description,
-          color: p.color,
-          status: p.status,
-          isFavorite: p.is_favorite,
-          progress: p.progress,
-          startDate: p.start_date,
-          endDate: p.end_date,
-          taskCount: parseInt(p.task_count),
-          completedTaskCount: parseInt(p.completed_task_count),
-          createdAt: p.created_at
-        }))
+        .map(p => {
+          const project = {
+            id: p.id,
+            groupId: p.group_id,
+            name: p.name,
+            description: p.description,
+            color: p.color,
+            status: p.status,
+            isFavorite: p.is_favorite,
+            progress: p.progress,
+            startDate: p.start_date,
+            endDate: p.end_date,
+            taskCount: parseInt(p.task_count),
+            completedTaskCount: parseInt(p.completed_task_count),
+            createdAt: p.created_at,
+            modules: []
+          };
+          
+          // Add modules to project
+          project.modules = modulesResult.rows
+            .filter(m => m.project_id === p.id)
+            .map(m => {
+              const module = {
+                id: m.id,
+                projectId: m.project_id,
+                name: m.name,
+                description: m.description,
+                status: m.status,
+                priority: m.priority,
+                start_date: m.start_date,
+                due_date: m.due_date,
+                progress: m.progress,
+                sortOrder: m.sort_order,
+                submodules: [],
+                tasks: []
+              };
+              
+              // Add submodules to module
+              module.submodules = submodulesResult.rows
+                .filter(sm => sm.module_id === m.id)
+                .map(sm => ({
+                  id: sm.id,
+                  moduleId: sm.module_id,
+                  name: sm.name,
+                  description: sm.description,
+                  status: sm.status,
+                  priority: sm.priority,
+                  start_date: sm.start_date,
+                  due_date: sm.due_date,
+                  progress: sm.progress,
+                  sortOrder: sm.sort_order,
+                  tasks: tasksResult.rows
+                    .filter(t => t.submodule_id === sm.id)
+                    .map(t => ({
+                      id: t.id,
+                      submoduleId: t.submodule_id,
+                      moduleId: t.module_id,
+                      title: t.title,
+                      name: t.title,
+                      description: t.description,
+                      status: t.status,
+                      priority: t.priority,
+                      dueDate: t.due_date,
+                      assignee: t.assignee_name,
+                      assigneeId: t.assignee_id,
+                      sortOrder: t.sort_order
+                    }))
+                }));
+              
+              // Add tasks directly to module (tasks not in submodules)
+              module.tasks = tasksResult.rows
+                .filter(t => t.module_id === m.id && !t.submodule_id)
+                .map(t => ({
+                  id: t.id,
+                  moduleId: t.module_id,
+                  title: t.title,
+                  name: t.title,
+                  description: t.description,
+                  status: t.status,
+                  priority: t.priority,
+                  dueDate: t.due_date,
+                  assignee: t.assignee_name,
+                  assigneeId: t.assignee_id,
+                  sortOrder: t.sort_order
+                }));
+              
+              return module;
+            });
+          
+          return project;
+        })
     }));
     
     res.json({ success: true, data: groups });

@@ -108,3 +108,207 @@
 .tree-item.expanded .tree-icon {
   transform: rotate(90deg);
 }
+
+/* Projects Table View Styles */
+.table-row {
+  transition: all 0.2s ease;
+}
+
+.table-row:hover {
+  transform: translateX(2px);
+}
+
+.table-row:active {
+  transform: scale(0.995);
+}
+
+/* Detail Panel Tabs */
+.detail-tab {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.detail-tab.active {
+  font-weight: 600;
+}
+
+.detail-tab:hover:not(.active) {
+  background-color: rgba(51, 65, 85, 0.3);
+}
+
+/* Smooth scroll for detail panel */
+#detail-content {
+  scroll-behavior: smooth;
+}
+
+/* Status badge animations */
+@keyframes statusPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.status-badge {
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
+/* Priority indicator */
+.priority-high {
+  position: relative;
+}
+
+.priority-high::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(to bottom, #f59e0b, #ef4444);
+  border-radius: 2px;
+}
+
+/* Hierarchy line indicator */
+.hierarchy-line {
+  position: relative;
+}
+
+.hierarchy-line::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  width: 12px;
+  height: 1px;
+  background-color: #475569;
+}
+
+/* Collapsible arrow animation */
+.expand-arrow {
+  transition: transform 0.2s ease;
+}
+
+.expand-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+/* Drag and drop styles */
+.dragging {
+  opacity: 0.5;
+  cursor: move;
+}
+
+.drag-over {
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 2px dashed rgba(59, 130, 246, 0.5);
+}
+
+/* Avatar styles */
+.avatar-stack {
+  display: flex;
+  align-items: center;
+}
+
+.avatar-stack .avatar:not(:first-child) {
+  margin-left: -8px;
+}
+
+.avatar {
+  border: 2px solid #1e293b;
+  transition: transform 0.2s ease;
+}
+
+.avatar:hover {
+  transform: scale(1.1);
+  z-index: 10;
+}
+
+/* File upload area */
+.upload-area {
+  transition: all 0.3s ease;
+}
+
+.upload-area:hover {
+  border-color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.upload-area.dragging-file {
+  border-color: #10b981;
+  background-color: rgba(16, 185, 129, 0.05);
+  transform: scale(1.02);
+}
+
+/* Activity timeline */
+.activity-item {
+  position: relative;
+}
+
+.activity-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  top: 40px;
+  width: 2px;
+  height: calc(100% - 40px);
+  background: linear-gradient(to bottom, #475569, transparent);
+}
+
+/* Tooltip styles */
+.tooltip {
+  position: absolute;
+  z-index: 1000;
+  padding: 8px 12px;
+  background-color: #0f172a;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.tooltip.show {
+  opacity: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  #project-detail-panel {
+    width: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  #project-detail-panel {
+    position: fixed;
+    width: 100%;
+    max-width: 100%;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    border-radius: 0;
+    z-index: 50;
+  }
+  
+  .table-row {
+    font-size: 0.875rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .table-row {
+    page-break-inside: avoid;
+  }
+}
