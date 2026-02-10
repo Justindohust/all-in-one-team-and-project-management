@@ -183,7 +183,23 @@ function createTableRow(item) {
   row.className = `table-row flex items-center gap-4 px-4 py-3 border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors cursor-pointer ${selectedItem?.displayId === item.displayId ? 'bg-primary-500/10' : ''}`;
   row.dataset.id = item.displayId;
   row.dataset.type = item.type;
-  row.onclick = () => selectTableItem(item);
+  
+  // Single click to show detail panel
+  row.onclick = (e) => {
+    // Don't trigger if clicking on editable name
+    if (e.target.classList.contains('item-name') || e.target.classList.contains('item-name-editable')) return;
+    selectTableItem(item);
+  };
+  
+  // Double click to expand/collapse if has children
+  if (item.hasChildren) {
+    row.ondblclick = (e) => {
+      // Don't trigger if clicking on name (name has its own double-click)
+      if (e.target.classList.contains('item-name') || e.target.classList.contains('item-name-editable')) return;
+      e.stopPropagation();
+      toggleRowExpand(item.displayId);
+    };
+  }
   
   // ID Column
   const idCol = document.createElement('div');
@@ -200,18 +216,14 @@ function createTableRow(item) {
   indent.style.width = `${item.level * 24}px`;
   subjectCol.appendChild(indent);
   
-  // Expand/Collapse button
+  // Visual indicator icon (no click action, double-click on row instead)
   if (item.hasChildren) {
-    const expandBtn = document.createElement('button');
-    expandBtn.className = 'flex-shrink-0 w-5 h-5 flex items-center justify-center text-slate-400 hover:text-white transition-colors';
-    expandBtn.innerHTML = expandedRows.has(item.displayId) 
+    const indicator = document.createElement('div');
+    indicator.className = 'flex-shrink-0 w-5 h-5 flex items-center justify-center text-slate-400 transition-transform';
+    indicator.innerHTML = expandedRows.has(item.displayId) 
       ? '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>'
       : '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>';
-    expandBtn.onclick = (e) => {
-      e.stopPropagation();
-      toggleRowExpand(item.displayId);
-    };
-    subjectCol.appendChild(expandBtn);
+    subjectCol.appendChild(indicator);
   } else {
     const spacer = document.createElement('div');
     spacer.className = 'w-5';
@@ -225,10 +237,14 @@ function createTableRow(item) {
     subjectCol.appendChild(hierarchyLine);
   }
   
-  // Item name
+  // Item name - editable on double click
   const nameSpan = document.createElement('span');
-  nameSpan.className = 'text-slate-200 text-sm truncate';
+  nameSpan.className = 'item-name text-slate-200 text-sm truncate flex-1';
   nameSpan.textContent = item.name;
+  nameSpan.ondblclick = (e) => {
+    e.stopPropagation();
+    makeNameEditable(nameSpan, item);
+  };
   subjectCol.appendChild(nameSpan);
   
   row.appendChild(subjectCol);
@@ -250,8 +266,8 @@ function createTableRow(item) {
   const statusCol = document.createElement('div');
   statusCol.className = 'w-32';
   statusCol.innerHTML = `
-    <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs ${getStatusBadgeClass(item.status)}">
-      <span class="w-2 h-2 rounded-full ${getStatusDotClass(item.status)}"></span>
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium ${getStatusBadgeClass(item.status)}">
+      <span class="w-1.5 h-1.5 rounded-full ${getStatusDotClass(item.status)}"></span>
       ${translateStatus(item.status)}
     </span>
   `;
@@ -278,10 +294,8 @@ function createTableRow(item) {
   const priorityCol = document.createElement('div');
   priorityCol.className = 'w-32';
   priorityCol.innerHTML = `
-    <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs ${getPriorityBadgeClass(item.priority)}">
-      <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
-      </svg>
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium ${getPriorityBadgeClass(item.priority)}">
+      ${getPriorityIcon(item.priority)}
       ${item.priority}
     </span>
   `;
@@ -373,14 +387,14 @@ function closeDetailPanel() {
 function switchDetailTab(tabName) {
   currentDetailTab = tabName;
   
-  // Update tab buttons
+  // Update tab buttons with new style
   document.querySelectorAll('.detail-tab').forEach(btn => {
     if (btn.dataset.tab === tabName) {
-      btn.classList.add('active', 'text-primary-400', 'border-primary-400');
-      btn.classList.remove('text-slate-400', 'border-transparent');
+      btn.classList.add('active', 'text-white', 'bg-primary-500');
+      btn.classList.remove('text-slate-400', 'bg-slate-700/50', 'hover:bg-slate-700/50');
     } else {
-      btn.classList.remove('active', 'text-primary-400', 'border-primary-400');
-      btn.classList.add('text-slate-400', 'border-transparent');
+      btn.classList.remove('active', 'text-white', 'bg-primary-500');
+      btn.classList.add('text-slate-400', 'hover:bg-slate-700/50');
     }
   });
   
@@ -432,113 +446,93 @@ function renderOverviewTab(content, item) {
   
   content.innerHTML = `
     <!-- Item Header -->
-    <div class="mb-6">
-      <div class="flex items-center gap-3 mb-3">
-        <div class="w-12 h-12 rounded-lg bg-slate-700/50 flex items-center justify-center flex-shrink-0">
-          <svg class="w-7 h-7 ${typeColors[item.type]}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="mb-6 p-4 bg-gradient-to-br from-slate-700/30 to-slate-800/30 rounded-xl border border-slate-600/50">
+      <div class="flex items-start gap-4 mb-4">
+        <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-slate-600/50 to-slate-700/50 flex items-center justify-center flex-shrink-0 shadow-lg">
+          <svg class="w-8 h-8 ${typeColors[item.type]}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${typeIcons[item.type]}"/>
           </svg>
         </div>
         <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2 mb-1">
-            <span class="text-xs uppercase font-semibold ${typeColors[item.type]}">${item.type}</span>
-            <span class="text-xs text-slate-500">#${item.displayId}</span>
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-xs uppercase font-bold tracking-wide ${typeColors[item.type]}">${item.type}</span>
+            <span class="text-xs text-slate-500 font-mono">#${item.displayId}</span>
           </div>
-          <h4 class="text-white font-semibold text-lg leading-tight">${item.name}</h4>
+          <h4 class="text-white font-bold text-xl leading-tight mb-2">${item.name}</h4>
+          <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium ${getStatusBadgeClass(item.status)}">
+            <span class="w-2 h-2 rounded-full ${getStatusDotClass(item.status)} animate-pulse"></span>
+            ${translateStatus(item.status)}
+          </span>
         </div>
-      </div>
-      
-      <!-- Status Banner -->
-      <div class="p-3 rounded-lg ${getStatusBannerClass(item.status)} border ${getStatusBorderClass(item.status)}">
-        <p class="text-sm">
-          <span class="font-medium">Công việc mới chưng - Sẽ được phân loại sau</span>
-        </p>
       </div>
     </div>
     
     <!-- People Section -->
     <div class="mb-6">
-      <h5 class="text-sm font-semibold text-white mb-3">PEOPLE</h5>
-      <div class="space-y-3">
+      <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
+        People
+      </h5>
+      <div class="space-y-3 bg-slate-700/20 rounded-xl p-4">
         <div class="flex items-center justify-between">
           <span class="text-sm text-slate-400">Assignee</span>
           ${item.assignee ? `
             <div class="flex items-center gap-2">
-              <div class="w-7 h-7 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-xs text-white font-medium">
+              <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-xs text-white font-bold shadow-lg">
                 ${item.assignee.charAt(0).toUpperCase()}
               </div>
               <span class="text-sm text-white font-medium">${item.assignee}</span>
             </div>
           ` : `
-            <button class="text-sm text-primary-400 hover:text-primary-300">Assign</button>
+            <button class="text-sm text-primary-400 hover:text-primary-300 font-medium">+ Assign</button>
           `}
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-sm text-slate-400">Accountable</span>
-          <span class="text-sm text-slate-500">-</span>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Estimates and Progress -->
-    <div class="mb-6">
-      <h5 class="text-sm font-semibold text-white mb-3">ESTIMATES AND PROGRESS</h5>
-      <div class="space-y-3">
-        <div class="flex items-center justify-between">
-          <span class="text-sm text-slate-400">Work</span>
-          <span class="text-sm text-white">1h</span>
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-sm text-slate-400">Remaining work</span>
-          <span class="text-sm text-white">1h</span>
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-sm text-slate-400">% Complete</span>
-          <span class="text-sm text-white">0%</span>
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-sm text-slate-400">Spent time</span>
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <span class="text-sm text-white">0.2h</span>
-          </div>
         </div>
       </div>
     </div>
     
     <!-- Details -->
     <div class="mb-6">
-      <h5 class="text-sm font-semibold text-white mb-3">DETAILS</h5>
-      <div class="space-y-3">
-        <div class="flex items-center justify-between">
-          <span class="text-sm text-slate-400">Priority *</span>
-          <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs ${getPriorityBadgeClass(item.priority)}">
+      <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        Details
+      </h5>
+      <div class="space-y-3 bg-slate-700/20 rounded-xl p-4">
+        <div class="flex items-center justify-between py-2 border-b border-slate-600/30">
+          <span class="text-sm text-slate-400">Priority</span>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold ${getPriorityBadgeClass(item.priority)}">
+            ${getPriorityIcon(item.priority)}
             ${item.priority}
           </span>
         </div>
-        <div class="flex items-center justify-between">
-          <span class="text-sm text-slate-400">Date</span>
-          <span class="text-sm text-white">${item.startDate || 'Not set'} - ${item.finishDate ? `<span class="text-red-400">${item.finishDate}</span>` : 'Not set'}</span>
+        <div class="flex items-center justify-between py-2 border-b border-slate-600/30">
+          <span class="text-sm text-slate-400">Start Date</span>
+          <span class="text-sm text-white font-medium">${item.startDate || '<span class="text-slate-500">Not set</span>'}</span>
+        </div>
+        <div class="flex items-center justify-between py-2">
+          <span class="text-sm text-slate-400">Due Date</span>
+          <span class="text-sm ${item.finishDate ? 'text-orange-400 font-medium' : 'text-slate-500'}">${item.finishDate || 'Not set'}</span>
         </div>
       </div>
     </div>
     
     <!-- Action Buttons -->
-    <div class="flex gap-2 pt-4 border-t border-slate-700">
-      <button onclick="editDetailItem()" class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-lg transition-colors">
+    <div class="flex gap-2 pt-4">
+      <button onclick="editDetailItem()" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg shadow-primary-500/20">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
         </svg>
         Edit
       </button>
-      <button onclick="duplicateDetailItem()" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-lg transition-colors">
+      <button onclick="duplicateDetailItem()" class="px-3 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition-all duration-200">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
         </svg>
       </button>
-      <button onclick="deleteDetailItem()" class="px-3 py-2 bg-danger/20 hover:bg-danger/30 text-danger text-sm rounded-lg transition-colors">
+      <button onclick="deleteDetailItem()" class="px-3 py-2.5 bg-danger/20 hover:bg-danger/30 text-danger text-sm font-medium rounded-lg transition-all duration-200">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
         </svg>
@@ -836,6 +830,89 @@ function translateStatus(status) {
     'todo': 'Mới'
   };
   return statusMap[status] || status;
+}
+
+// Make item name editable inline
+function makeNameEditable(nameSpan, item) {
+  const currentName = nameSpan.textContent;
+  
+  // Create textarea
+  const textarea = document.createElement('textarea');
+  textarea.className = 'item-name-editable bg-slate-700 text-slate-200 text-sm px-2 py-1 rounded border border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none';
+  textarea.value = currentName;
+  textarea.rows = 1;
+  textarea.style.width = '100%';
+  textarea.style.minWidth = '200px';
+  
+  // Auto-resize textarea
+  const autoResize = () => {
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
+  };
+  
+  textarea.addEventListener('input', autoResize);
+  
+  // Replace span with textarea
+  nameSpan.replaceWith(textarea);
+  textarea.focus();
+  textarea.select();
+  autoResize();
+  
+  // Save on blur or Enter
+  const saveEdit = async () => {
+    const newName = textarea.value.trim();
+    if (newName && newName !== currentName) {
+      // Update in allProjectsData
+      item.name = newName;
+      
+      // TODO: Call API to update name
+      // await api.updateItemName(item.type, item.realId, newName);
+      
+      console.log(`Updated ${item.type} #${item.realId} name to: ${newName}`);
+    }
+    
+    // Replace textarea back with span
+    const newSpan = document.createElement('span');
+    newSpan.className = 'item-name text-slate-200 text-sm truncate flex-1';
+    newSpan.textContent = item.name;
+    newSpan.ondblclick = (e) => {
+      e.stopPropagation();
+      makeNameEditable(newSpan, item);
+    };
+    textarea.replaceWith(newSpan);
+  };
+  
+  textarea.addEventListener('blur', saveEdit);
+  textarea.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      saveEdit();
+    } else if (e.key === 'Escape') {
+      // Cancel edit
+      const newSpan = document.createElement('span');
+      newSpan.className = 'item-name text-slate-200 text-sm truncate flex-1';
+      newSpan.textContent = currentName;
+      newSpan.ondblclick = (e) => {
+        e.stopPropagation();
+        makeNameEditable(newSpan, item);
+      };
+      textarea.replaceWith(newSpan);
+    }
+  });
+}
+
+// Get priority icon HTML
+function getPriorityIcon(priority) {
+  const priorityLower = priority ? priority.toLowerCase() : 'medium';
+  const icons = {
+    'low': '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>',
+    'medium': '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/></svg>',
+    'normal': '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/></svg>',
+    'bình thường': '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/></svg>',
+    'high': '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>',
+    'urgent': '<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>'
+  };
+  return icons[priorityLower] || icons['medium'];
 }
 
 function getStatusBadgeClass(status) {
