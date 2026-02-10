@@ -9,13 +9,13 @@ let deleteCallback = null;
 
 // Initialize Projects Tree View
 function initProjectsTreeView() {
-  // Initialize table view by default
+  // Initialize table view first (new UI)
   initProjectsTableView();
   
   // Old tree view code kept for backward compatibility
   const container = document.getElementById('projects-treeview-page');
   if (!container) {
-    console.error('Projects container not found');
+    console.log('Old tree view container not found, using table view only');
     return;
   }
   
@@ -293,6 +293,12 @@ function handleNodeCreate(parentNode, templateNode = null) {
   const form = document.getElementById('tree-node-form');
   const typeSelect = document.getElementById('node-type');
   
+  // Check if modal elements exist
+  if (!modal || !title || !form || !typeSelect) {
+    console.error('[Projects] Modal elements not found. Modals may not be loaded yet.');
+    return;
+  }
+  
   // Reset form
   form.reset();
   document.getElementById('node-id').value = '';
@@ -330,6 +336,12 @@ function handleNodeUpdate(node) {
   const title = document.getElementById('tree-node-modal-title');
   const form = document.getElementById('tree-node-form');
   const typeSelect = document.getElementById('node-type');
+  
+  // Check if modal elements exist
+  if (!modal || !title || !form || !typeSelect) {
+    console.error('[Projects] Modal elements not found. Modals may not be loaded yet.');
+    return;
+  }
   
   // Set title
   title.textContent = `Edit ${capitalize(node.type)}`;

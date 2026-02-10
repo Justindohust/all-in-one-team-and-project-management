@@ -9,7 +9,7 @@ class ViewLoader {
   }
 
   // Initialize the view loader
-  init(viewContainerId = 'view-container', modalsContainerId = 'modals-container') {
+  async init(viewContainerId = 'view-container', modalsContainerId = 'modals-container') {
     this.viewContainer = document.getElementById(viewContainerId);
     this.modalsContainer = document.getElementById(modalsContainerId);
     
@@ -18,8 +18,8 @@ class ViewLoader {
       return false;
     }
     
-    // Load modals once
-    this.loadModals();
+    // Load modals once and wait for them
+    await this.loadModals();
     
     return true;
   }
@@ -146,8 +146,8 @@ class ViewLoader {
     });
     this.currentView = viewName;
 
-    // Execute callbacks for this view only if it's newly created
-    if (isNewPage && this.viewCallbacks.has(viewName)) {
+    // Execute callbacks for this view every time it's shown
+    if (this.viewCallbacks.has(viewName)) {
       this.viewCallbacks.get(viewName).forEach(callback => callback());
     }
 

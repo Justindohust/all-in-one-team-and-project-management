@@ -345,8 +345,8 @@
       window.app = window.app || new DigiHubApp();
       await app.init();
       
-      // Initialize view loader
-      viewLoader.init('view-container', 'modals-container');
+      // Initialize view loader and wait for modals to load
+      await viewLoader.init('view-container', 'modals-container');
       
       // Register view callbacks
       viewLoader.onViewLoad('dashboard', initDashboard);
