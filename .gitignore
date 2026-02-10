@@ -24,6 +24,12 @@ Thumbs.db
 .env.local
 .env.remote
 .env.*.local
+backend/.env
+backend/.env.local
+backend/.env.remote
+backend/env.local
+backend/env.remote
+backend/.db-mode
 
 # Database backups
 *.sql.backup

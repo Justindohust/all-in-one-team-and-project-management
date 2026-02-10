@@ -1,5 +1,22 @@
 const { Pool } = require('pg');
-require('dotenv').config();
+const path = require('path');
+const fs = require('fs');
+
+// Read DB mode from file, fallback to 'local'
+const dbModeFile = path.join(__dirname, '..', '.db-mode');
+let dbMode = 'local';
+if (fs.existsSync(dbModeFile)) {
+  dbMode = fs.readFileSync(dbModeFile, 'utf8').trim();
+}
+
+const envFile = path.join(__dirname, '..', `env.${dbMode}`);
+
+if (fs.existsSync(envFile)) {
+  require('dotenv').config({ path: envFile });
+  console.log(`📝 Using database config: env.${dbMode}`);
+} else {
+  console.warn(`⚠️  env.${dbMode} not found, using defaults`);
+}
 
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',

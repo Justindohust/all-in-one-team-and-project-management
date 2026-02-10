@@ -11,7 +11,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
-      - ./backend/database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+      - ./backend/database/20260101000001-add-modules.sql:/docker-entrypoint-initdb.d/02-add-modules.sql
+      - ./backend/database/20260210000001-add-submodules.sql:/docker-entrypoint-initdb.d/03-add-submodules.sql
+      - ./backend/database/seed.sql:/docker-entrypoint-initdb.d/04-seed.sql
     ports:
       - "5432:5432"
     healthcheck:

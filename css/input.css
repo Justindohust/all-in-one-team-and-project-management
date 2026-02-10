@@ -110,16 +110,21 @@
 }
 
 /* Projects Table View Styles */
-.table-row {
-  transition: all 0.2s ease;
+#projects-treegrid {
+  border-collapse: collapse;
+  table-layout: fixed;
 }
 
-.table-row:hover {
-  transform: translateX(2px);
+#projects-treegrid tbody tr {
+  transition: background 0.15s ease;
 }
 
-.table-row:active {
-  transform: scale(0.995);
+#projects-treegrid tbody tr:hover {
+  background: rgba(51, 65, 85, 0.3);
+}
+
+#projects-treegrid tbody tr:active {
+  background: rgba(51, 65, 85, 0.5);
 }
 
 /* Detail Panel Tabs */
@@ -297,7 +302,7 @@
     z-index: 50;
   }
   
-  .table-row {
+  #projects-treegrid {
     font-size: 0.875rem;
   }
 }
@@ -308,7 +313,7 @@
     display: none !important;
   }
   
-  .table-row {
+  #projects-treegrid tbody tr {
     page-break-inside: avoid;
   }
 }

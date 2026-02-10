@@ -29,6 +29,7 @@ async function loadProjectsData() {
 }
 
 // Flatten nested hierarchy into flat list with levels
+// IMPORTANT: Parent is pushed BEFORE children so rendering order is correct
 function flattenProjectsHierarchy(projectGroups) {
   const flatList = [];
   let idCounter = 1;
@@ -36,7 +37,7 @@ function flattenProjectsHierarchy(projectGroups) {
   projectGroups.forEach(group => {
     if (group.projects) {
       group.projects.forEach(project => {
-        // Add project
+        // Add project FIRST
         const projectItem = {
           displayId: idCounter++,
           realId: project.id,
@@ -44,7 +45,7 @@ function flattenProjectsHierarchy(projectGroups) {
           level: 0,
           type: 'PROJECT',
           name: project.name,
-          status: project.status || 'Mới',
+          status: project.status || 'active',
           assignee: null,
           priority: 'Bình thường',
           startDate: project.startDate ? formatDate(project.startDate) : null,
@@ -52,8 +53,9 @@ function flattenProjectsHierarchy(projectGroups) {
           hasChildren: project.modules && project.modules.length > 0,
           children: []
         };
+        flatList.push(projectItem); // Parent first!
         
-        // Add modules
+        // Then add modules
         if (project.modules) {
           project.modules.forEach(module => {
             const moduleItem = {
@@ -63,14 +65,16 @@ function flattenProjectsHierarchy(projectGroups) {
               level: 1,
               type: 'MODULE',
               name: module.name,
-              status: module.status || 'Mới',
+              status: module.status || 'active',
               assignee: null,
               priority: module.priority ? capitalize(module.priority) : 'Bình thường',
               startDate: module.start_date ? formatDate(module.start_date) : null,
               finishDate: module.due_date ? formatDate(module.due_date) : null,
-              hasChildren: module.submodules && module.submodules.length > 0,
+              hasChildren: (module.submodules && module.submodules.length > 0) || (module.tasks && module.tasks.length > 0),
               children: []
             };
+            projectItem.children.push(moduleItem);
+            flatList.push(moduleItem); // Module before its children
             
             // Add submodules (if exists)
             if (module.submodules) {
@@ -82,7 +86,7 @@ function flattenProjectsHierarchy(projectGroups) {
                   level: 2,
                   type: 'SUBMODULE',
                   name: submodule.name,
-                  status: submodule.status || 'Mới',
+                  status: submodule.status || 'active',
                   assignee: null,
                   priority: submodule.priority ? capitalize(submodule.priority) : 'Bình thường',
                   startDate: submodule.start_date ? formatDate(submodule.start_date) : null,
@@ -90,6 +94,8 @@ function flattenProjectsHierarchy(projectGroups) {
                   hasChildren: submodule.tasks && submodule.tasks.length > 0,
                   children: []
                 };
+                moduleItem.children.push(submoduleItem);
+                flatList.push(submoduleItem); // Submodule before its tasks
                 
                 // Add tasks to submodule
                 if (submodule.tasks) {
@@ -99,32 +105,24 @@ function flattenProjectsHierarchy(projectGroups) {
                     flatList.push(taskItem);
                   });
                 }
-                
-                moduleItem.children.push(submoduleItem);
-                flatList.push(submoduleItem);
               });
             }
             
             // Add tasks directly to module if no submodules
-            if (module.tasks && !module.submodules) {
+            if (module.tasks && (!module.submodules || module.submodules.length === 0)) {
               module.tasks.forEach(task => {
                 const taskItem = createTaskItem(task, moduleItem.displayId, 2, idCounter++);
                 moduleItem.children.push(taskItem);
                 flatList.push(taskItem);
               });
             }
-            
-            projectItem.children.push(moduleItem);
-            flatList.push(moduleItem);
           });
         }
-        
-        flatList.push(projectItem);
       });
     }
   });
   
-  return flatList.reverse(); // Reverse to show in correct order
+  return flatList; // Already in correct order: parent before children
 }
 
 function createTaskItem(task, parentId, level, id) {
@@ -145,6 +143,16 @@ function createTaskItem(task, parentId, level, id) {
   };
 }
 
+// Check if an item is visible (all ancestors must be expanded)
+function isItemVisible(item) {
+  if (item.level === 0) return true;
+  // Find parent
+  const parent = allProjectsData.find(i => i.displayId === item.parentId);
+  if (!parent) return false;
+  // Parent must be expanded AND parent itself must be visible
+  return expandedRows.has(parent.displayId) && isItemVisible(parent);
+}
+
 // Render table view
 function renderTableView() {
   const tbody = document.getElementById('projects-table-body');
@@ -152,18 +160,16 @@ function renderTableView() {
   
   if (allProjectsData.length === 0) {
     tbody.innerHTML = `
-      <div class="flex items-center justify-center h-64 text-slate-400">
-        <div class="text-center">
-          <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-          </svg>
-          <p class="text-lg font-medium mb-2">No projects yet</p>
-          <p class="text-sm mb-4">Create your first project to get started</p>
-          <button onclick="openTreeNodeModal(null, 'project')" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm">
-            Create Project
-          </button>
-        </div>
-      </div>
+      <tr><td colspan="8" style="text-align:center;padding:80px 16px;color:#94a3b8">
+        <svg style="width:64px;height:64px;margin:0 auto 16px;opacity:0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+        </svg>
+        <p style="font-size:16px;font-weight:500;margin-bottom:8px">No projects yet</p>
+        <p style="font-size:14px;margin-bottom:16px">Create your first project to get started</p>
+        <button onclick="openTreeNodeModal(null, 'project')" style="padding:8px 16px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">
+          Create Project
+        </button>
+      </td></tr>
     `;
     return;
   }
@@ -171,166 +177,135 @@ function renderTableView() {
   tbody.innerHTML = '';
   
   allProjectsData.forEach(item => {
-    if (item.level === 0 || expandedRows.has(item.parentId)) {
+    if (isItemVisible(item)) {
       tbody.appendChild(createTableRow(item));
     }
   });
 }
 
-// Create table row
+// Create table row using <tr>/<td>
 function createTableRow(item) {
-  const row = document.createElement('div');
-  row.className = `table-row flex items-center gap-4 px-4 py-3 border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors cursor-pointer ${selectedItem?.displayId === item.displayId ? 'bg-primary-500/10' : ''}`;
+  const row = document.createElement('tr');
+  const isSelected = selectedItem?.displayId === item.displayId;
+  row.style.cssText = `border-bottom:1px solid rgba(51,65,85,0.5);cursor:pointer;transition:background 0.15s;${isSelected ? 'background:rgba(59,130,246,0.1)' : ''}`;
   row.dataset.id = item.displayId;
   row.dataset.type = item.type;
   
-  // Single click to show detail panel
+  row.onmouseenter = () => { if (!isSelected) row.style.background = 'rgba(51,65,85,0.3)'; };
+  row.onmouseleave = () => { if (!isSelected) row.style.background = ''; };
+  
+  // Click to show detail panel
   row.onclick = (e) => {
-    // Don't trigger if clicking on editable name
-    if (e.target.classList.contains('item-name') || e.target.classList.contains('item-name-editable')) return;
+    if (e.target.closest('.item-name-editable')) return;
     selectTableItem(item);
   };
   
-  // Double click to expand/collapse if has children
+  // Double click to expand/collapse
   if (item.hasChildren) {
     row.ondblclick = (e) => {
-      // Don't trigger if clicking on name (name has its own double-click)
-      if (e.target.classList.contains('item-name') || e.target.classList.contains('item-name-editable')) return;
+      if (e.target.closest('.item-name-editable')) return;
       e.stopPropagation();
       toggleRowExpand(item.displayId);
     };
   }
   
-  // ID Column
-  const idCol = document.createElement('div');
-  idCol.className = 'w-16 text-slate-300 text-sm font-mono';
-  idCol.textContent = item.displayId;
-  row.appendChild(idCol);
+  const cellStyle = 'padding:10px 8px;font-size:13px;vertical-align:middle;white-space:nowrap;';
   
-  // Subject Column (with hierarchy indent and expand/collapse)
-  const subjectCol = document.createElement('div');
-  subjectCol.className = 'flex-1 min-w-[300px] flex items-center gap-2';
+  // 1. ID Column
+  const tdId = document.createElement('td');
+  tdId.style.cssText = cellStyle + 'padding-left:16px;color:#cbd5e1;font-family:monospace;';
+  tdId.textContent = item.displayId;
+  row.appendChild(tdId);
   
-  // Indent
-  const indent = document.createElement('div');
-  indent.style.width = `${item.level * 24}px`;
-  subjectCol.appendChild(indent);
+  // 2. Subject Column (with hierarchy indent + expand arrow + name)
+  const tdSubject = document.createElement('td');
+  tdSubject.style.cssText = cellStyle + 'white-space:normal;';
   
-  // Visual indicator icon (no click action, double-click on row instead)
-  if (item.hasChildren) {
-    const indicator = document.createElement('div');
-    indicator.className = 'flex-shrink-0 w-5 h-5 flex items-center justify-center text-slate-400 transition-transform';
-    indicator.innerHTML = expandedRows.has(item.displayId) 
-      ? '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>'
-      : '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>';
-    subjectCol.appendChild(indicator);
-  } else {
-    const spacer = document.createElement('div');
-    spacer.className = 'w-5';
-    subjectCol.appendChild(spacer);
-  }
+  const subjectWrap = document.createElement('div');
+  subjectWrap.style.cssText = 'display:flex;align-items:center;gap:4px;';
   
-  // Hierarchy indicator line
+  // Indent spacer
   if (item.level > 0) {
-    const hierarchyLine = document.createElement('div');
-    hierarchyLine.className = 'w-4 h-px bg-slate-600';
-    subjectCol.appendChild(hierarchyLine);
+    const spacer = document.createElement('span');
+    spacer.style.cssText = `display:inline-block;width:${item.level * 20}px;flex-shrink:0;`;
+    subjectWrap.appendChild(spacer);
   }
   
-  // Item name - editable on double click
-  const nameSpan = document.createElement('span');
-  nameSpan.className = 'item-name text-slate-200 text-sm truncate flex-1';
-  nameSpan.textContent = item.name;
-  nameSpan.ondblclick = (e) => {
-    e.stopPropagation();
-    makeNameEditable(nameSpan, item);
-  };
-  subjectCol.appendChild(nameSpan);
+  // Expand/collapse arrow or dot
+  const arrowBtn = document.createElement('span');
+  arrowBtn.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex-shrink:0;color:#94a3b8;';
+  if (item.hasChildren) {
+    const isExp = expandedRows.has(item.displayId);
+    arrowBtn.innerHTML = isExp
+      ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>'
+      : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>';
+    arrowBtn.style.cursor = 'pointer';
+    arrowBtn.onclick = (e) => { e.stopPropagation(); toggleRowExpand(item.displayId); };
+  }
+  subjectWrap.appendChild(arrowBtn);
   
-  row.appendChild(subjectCol);
+  // Name text
+  const nameEl = document.createElement('span');
+  nameEl.style.cssText = 'color:#e2e8f0;overflow:hidden;text-overflow:ellipsis;';
+  nameEl.textContent = item.name;
+  nameEl.ondblclick = (e) => { e.stopPropagation(); makeNameEditable(nameEl, item); };
+  subjectWrap.appendChild(nameEl);
   
-  // Type Column
-  const typeCol = document.createElement('div');
-  typeCol.className = 'w-32 text-sm';
-  const typeColors = {
-    'PROJECT': 'text-blue-400',
-    'MODULE': 'text-purple-400',
-    'SUBMODULE': 'text-indigo-400',
-    'TASK': 'text-green-400',
-    'RESEARCH/SURVEY': 'text-pink-400'
-  };
-  typeCol.innerHTML = `<span class="${typeColors[item.type] || 'text-slate-400'}">${item.type}</span>`;
-  row.appendChild(typeCol);
+  tdSubject.appendChild(subjectWrap);
+  row.appendChild(tdSubject);
   
-  // Status Column
-  const statusCol = document.createElement('div');
-  statusCol.className = 'w-32';
-  statusCol.innerHTML = `
-    <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium ${getStatusBadgeClass(item.status)}">
-      <span class="w-1.5 h-1.5 rounded-full ${getStatusDotClass(item.status)}"></span>
-      ${translateStatus(item.status)}
-    </span>
-  `;
-  row.appendChild(statusCol);
+  // 3. Type Column
+  const tdType = document.createElement('td');
+  tdType.style.cssText = cellStyle;
+  const typeColorMap = { 'PROJECT':'#60a5fa','MODULE':'#a78bfa','SUBMODULE':'#818cf8','TASK':'#34d399' };
+  tdType.innerHTML = `<span style="color:${typeColorMap[item.type]||'#94a3b8'};font-size:12px;font-weight:500">${item.type}</span>`;
+  row.appendChild(tdType);
   
-  // Assignee Column
-  const assigneeCol = document.createElement('div');
-  assigneeCol.className = 'w-32 text-sm text-slate-300';
+  // 4. Status Column
+  const tdStatus = document.createElement('td');
+  tdStatus.style.cssText = cellStyle;
+  const statusColors = { 'active':'#22d3ee','pending':'#facc15','in_progress':'#3b82f6','completed':'#22c55e','done':'#22c55e','todo':'#22d3ee','Mới':'#22d3ee','mới':'#22d3ee' };
+  const sc = statusColors[item.status] || '#94a3b8';
+  tdStatus.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500;background:${sc}22;color:${sc}"><span style="width:6px;height:6px;border-radius:50%;background:${sc}"></span>${translateStatus(item.status)}</span>`;
+  row.appendChild(tdStatus);
+  
+  // 5. Assignee Column
+  const tdAssignee = document.createElement('td');
+  tdAssignee.style.cssText = cellStyle + 'color:#cbd5e1;';
   if (item.assignee) {
-    assigneeCol.innerHTML = `
-      <div class="flex items-center gap-2">
-        <div class="w-6 h-6 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-xs text-white font-medium">
-          ${item.assignee.charAt(0).toUpperCase()}
-        </div>
-        <span class="truncate">${item.assignee}</span>
-      </div>
-    `;
+    tdAssignee.innerHTML = `<div style="display:flex;align-items:center;gap:6px"><div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:600;flex-shrink:0">${item.assignee.charAt(0).toUpperCase()}</div><span style="overflow:hidden;text-overflow:ellipsis;font-size:12px">${item.assignee}</span></div>`;
   } else {
-    assigneeCol.innerHTML = '<span class="text-slate-500">-</span>';
+    tdAssignee.innerHTML = '<span style="color:#475569">-</span>';
   }
-  row.appendChild(assigneeCol);
+  row.appendChild(tdAssignee);
   
-  // Priority Column
-  const priorityCol = document.createElement('div');
-  priorityCol.className = 'w-32';
-  priorityCol.innerHTML = `
-    <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium ${getPriorityBadgeClass(item.priority)}">
-      ${getPriorityIcon(item.priority)}
-      ${item.priority}
-    </span>
-  `;
-  row.appendChild(priorityCol);
+  // 6. Priority Column
+  const tdPriority = document.createElement('td');
+  tdPriority.style.cssText = cellStyle;
+  const prioColorMap = { 'low':'#64748b','medium':'#3b82f6','normal':'#3b82f6','bình thường':'#3b82f6','high':'#f97316','urgent':'#ef4444' };
+  const prioKey = item.priority ? item.priority.toLowerCase() : 'normal';
+  const pc = prioColorMap[prioKey] || '#3b82f6';
+  tdPriority.innerHTML = `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500;background:${pc}22;color:${pc}">${getPriorityIcon(item.priority)} ${item.priority}</span>`;
+  row.appendChild(tdPriority);
   
-  // Start Date Column
-  const startCol = document.createElement('div');
-  startCol.className = 'w-32 text-sm text-slate-400';
-  startCol.innerHTML = item.startDate ? `
-    <div class="flex items-center gap-1.5">
-      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-      </svg>
-      ${item.startDate}
-    </div>
-  ` : '<span class="text-slate-600">-</span>';
-  row.appendChild(startCol);
+  // 7. Start Date Column
+  const tdStart = document.createElement('td');
+  tdStart.style.cssText = cellStyle + 'color:#94a3b8;font-size:12px;';
+  tdStart.textContent = item.startDate || '-';
+  row.appendChild(tdStart);
   
-  // Finish Date Column
-  const finishCol = document.createElement('div');
-  finishCol.className = 'w-32 text-sm';
+  // 8. Finish Date Column
+  const tdFinish = document.createElement('td');
+  tdFinish.style.cssText = cellStyle + 'font-size:12px;';
   if (item.finishDate) {
     const isOverdue = new Date(item.finishDate) < new Date() && item.status !== 'completed' && item.status !== 'done';
-    finishCol.innerHTML = `
-      <div class="flex items-center gap-1.5 ${isOverdue ? 'text-red-400' : 'text-slate-400'}">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-        </svg>
-        ${item.finishDate}
-      </div>
-    `;
+    tdFinish.style.color = isOverdue ? '#f87171' : '#94a3b8';
+    tdFinish.textContent = item.finishDate;
   } else {
-    finishCol.innerHTML = '<span class="text-slate-600">-</span>';
+    tdFinish.style.color = '#475569';
+    tdFinish.textContent = '-';
   }
-  row.appendChild(finishCol);
+  row.appendChild(tdFinish);
   
   return row;
 }
@@ -380,7 +355,9 @@ function closeDetailPanel() {
     panel.classList.add('hidden');
   }
   selectedItem = null;
-  renderTableView();
+  if (currentProjectView === 'table') {
+    renderTableView();
+  }
 }
 
 // Switch detail tab
@@ -798,12 +775,89 @@ function setProjectView(viewType) {
   document.getElementById('view-tree-btn').classList.toggle('text-white', viewType === 'tree');
   document.getElementById('view-tree-btn').classList.toggle('text-slate-400', viewType !== 'tree');
   
+  const tableContainer = document.getElementById('table-view-container');
+  const treeContainer = document.getElementById('tree-view-container');
+  
   // Show/hide containers
   if (viewType === 'table') {
-    document.getElementById('table-view-container').style.display = 'flex';
-  } else {
-    showNotification('Info', 'Tree view coming soon', 'info');
+    if (tableContainer) tableContainer.classList.remove('hidden');
+    if (treeContainer) treeContainer.classList.add('hidden');
+  } else if (viewType === 'tree') {
+    if (tableContainer) tableContainer.classList.add('hidden');
+    if (treeContainer) treeContainer.classList.remove('hidden');
+    // Initialize tree view if not already done
+    initTreeViewFromTableData();
   }
+}
+
+// Initialize tree view using already-loaded table data
+function initTreeViewFromTableData() {
+  const container = document.getElementById('projects-treeview-page');
+  if (!container) return;
+  
+  // If tree view already initialized and has data, just return
+  if (window._projectTreeViewInitialized && projectTreeView) return;
+  
+  // Use app.state.projectGroups if available
+  if (app.state.projectGroups && app.state.projectGroups.length > 0) {
+    const treeData = transformProjectGroupsToTree(app.state.projectGroups);
+    
+    projectTreeView = new AdvancedTreeView(container, {
+      data: treeData,
+      allowDrag: true,
+      allowEdit: true,
+      allowDelete: true,
+      allowCreate: true,
+      showContextMenu: true,
+      onSelect: handleTreeNodeSelect,
+      onCreate: handleNodeCreate,
+      onUpdate: handleNodeUpdate,
+      onDelete: handleNodeDelete,
+      onMove: handleNodeMove
+    });
+    
+    window._projectTreeViewInitialized = true;
+  } else {
+    // Data not loaded yet, fetch it
+    loadTreeViewData();
+  }
+}
+
+// Load tree view data from API
+async function loadTreeViewData() {
+  try {
+    const result = await api.getProjectGroups();
+    if (result.success) {
+      app.state.projectGroups = result.data;
+      window._projectTreeViewInitialized = false;
+      initTreeViewFromTableData();
+    }
+  } catch (error) {
+    console.error('Failed to load tree view data:', error);
+  }
+}
+
+// Handle tree node select - show detail panel with same format as table view
+function handleTreeNodeSelect(node) {
+  const { type, realId } = parseNodeId(node.id);
+  
+  // Convert tree node to table-compatible item for detail panel
+  const item = {
+    displayId: realId,
+    realId: realId,
+    type: type.toUpperCase(),
+    name: node.name,
+    status: node.status || 'active',
+    assignee: node.assignee || null,
+    priority: node.priority || 'Bình thường',
+    startDate: node.startDate || null,
+    finishDate: node.dueDate || null,
+    hasChildren: node.children && node.children.length > 0,
+    children: node.children || []
+  };
+  
+  selectedItem = item;
+  showDetailPanel(item);
 }
 
 // Utility functions
@@ -838,11 +892,10 @@ function makeNameEditable(nameSpan, item) {
   
   // Create textarea
   const textarea = document.createElement('textarea');
-  textarea.className = 'item-name-editable bg-slate-700 text-slate-200 text-sm px-2 py-1 rounded border border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none';
+  textarea.className = 'item-name-editable';
+  textarea.style.cssText = 'background:#334155;color:#e2e8f0;font-size:13px;padding:4px 8px;border-radius:4px;border:1px solid #3b82f6;outline:none;resize:none;width:100%;min-width:150px;font-family:inherit;';
   textarea.value = currentName;
   textarea.rows = 1;
-  textarea.style.width = '100%';
-  textarea.style.minWidth = '200px';
   
   // Auto-resize textarea
   const autoResize = () => {
@@ -862,18 +915,13 @@ function makeNameEditable(nameSpan, item) {
   const saveEdit = async () => {
     const newName = textarea.value.trim();
     if (newName && newName !== currentName) {
-      // Update in allProjectsData
       item.name = newName;
-      
-      // TODO: Call API to update name
-      // await api.updateItemName(item.type, item.realId, newName);
-      
       console.log(`Updated ${item.type} #${item.realId} name to: ${newName}`);
     }
     
     // Replace textarea back with span
     const newSpan = document.createElement('span');
-    newSpan.className = 'item-name text-slate-200 text-sm truncate flex-1';
+    newSpan.style.cssText = 'color:#e2e8f0;overflow:hidden;text-overflow:ellipsis;';
     newSpan.textContent = item.name;
     newSpan.ondblclick = (e) => {
       e.stopPropagation();
@@ -890,7 +938,7 @@ function makeNameEditable(nameSpan, item) {
     } else if (e.key === 'Escape') {
       // Cancel edit
       const newSpan = document.createElement('span');
-      newSpan.className = 'item-name text-slate-200 text-sm truncate flex-1';
+      newSpan.style.cssText = 'color:#e2e8f0;overflow:hidden;text-overflow:ellipsis;';
       newSpan.textContent = currentName;
       newSpan.ondblclick = (e) => {
         e.stopPropagation();
@@ -904,13 +952,14 @@ function makeNameEditable(nameSpan, item) {
 // Get priority icon HTML
 function getPriorityIcon(priority) {
   const priorityLower = priority ? priority.toLowerCase() : 'medium';
+  const s = 'width="12" height="12"'; // icon size
   const icons = {
-    'low': '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>',
-    'medium': '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/></svg>',
-    'normal': '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/></svg>',
-    'bình thường': '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/></svg>',
-    'high': '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>',
-    'urgent': '<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>'
+    'low': `<svg ${s} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>`,
+    'medium': `<svg ${s} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/></svg>`,
+    'normal': `<svg ${s} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/></svg>`,
+    'bình thường': `<svg ${s} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/></svg>`,
+    'high': `<svg ${s} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>`,
+    'urgent': `<svg ${s} fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>`
   };
   return icons[priorityLower] || icons['medium'];
 }
@@ -964,17 +1013,15 @@ function showTableError(message) {
   const tbody = document.getElementById('projects-table-body');
   if (tbody) {
     tbody.innerHTML = `
-      <div class="flex items-center justify-center h-64 text-slate-400">
-        <div class="text-center">
-          <svg class="w-16 h-16 mx-auto mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-          <p class="text-lg font-medium mb-2">${message}</p>
-          <button onclick="loadProjectsData()" class="mt-4 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm">
-            Retry
-          </button>
-        </div>
-      </div>
+      <tr><td colspan="8" style="text-align:center;padding:80px 16px;color:#94a3b8">
+        <svg style="width:64px;height:64px;margin:0 auto 16px;color:#f87171" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p style="font-size:16px;font-weight:500;margin-bottom:8px">${message}</p>
+        <button onclick="loadProjectsData()" style="margin-top:16px;padding:8px 16px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">
+          Retry
+        </button>
+      </td></tr>
     `;
   }
 }
@@ -987,3 +1034,6 @@ window.closeDetailPanel = closeDetailPanel;
 window.editDetailItem = editDetailItem;
 window.duplicateDetailItem = duplicateDetailItem;
 window.deleteDetailItem = deleteDetailItem;
+window.initTreeViewFromTableData = initTreeViewFromTableData;
+window.handleTreeNodeSelect = handleTreeNodeSelect;
+window.loadProjectsData = loadProjectsData;

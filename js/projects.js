@@ -12,42 +12,8 @@ function initProjectsTreeView() {
   // Initialize table view first (new UI)
   initProjectsTableView();
   
-  // Old tree view code kept for backward compatibility
-  const container = document.getElementById('projects-treeview-page');
-  if (!container) {
-    console.log('Old tree view container not found, using table view only');
-    return;
-  }
-  
-  // Check if data is loaded
-  if (!app.state.projectGroups || app.state.projectGroups.length === 0) {
-    // Wait and retry
-    setTimeout(() => {
-      if (app.state.projectGroups && app.state.projectGroups.length > 0) {
-        initProjectsTreeView();
-      }
-    }, 1000);
-    return;
-  }
-  
-  console.log('Initializing Projects TreeView with data:', app.state.projectGroups);
-  
-  // Transform project groups data to tree structure
-  const treeData = transformProjectGroupsToTree(app.state.projectGroups);
-  
-  projectTreeView = new AdvancedTreeView(container, {
-    data: treeData,
-    allowDrag: true,
-    allowEdit: true,
-    allowDelete: true,
-    allowCreate: true,
-    showContextMenu: true,
-    onSelect: handleNodeSelect,
-    onCreate: handleNodeCreate,
-    onUpdate: handleNodeUpdate,
-    onDelete: handleNodeDelete,
-    onMove: handleNodeMove
-  });
+  // Tree view will be initialized on-demand when user switches to tree view
+  // via setProjectView('tree') -> initTreeViewFromTableData()
 }
 
 // Reload project groups from API
@@ -57,12 +23,15 @@ async function reloadProjectGroups() {
     if (result.success) {
       app.state.projectGroups = result.data;
       
-      // Re-transform to tree structure
-      const treeData = transformProjectGroupsToTree(app.state.projectGroups);
-      
-      // Update tree view
+      // Update tree view if initialized
       if (projectTreeView) {
+        const treeData = transformProjectGroupsToTree(app.state.projectGroups);
         projectTreeView.updateData(treeData);
+      }
+      
+      // Also refresh table view data
+      if (typeof loadProjectsData === 'function') {
+        loadProjectsData();
       }
     }
   } catch (error) {

@@ -14,23 +14,23 @@ if (!mode || !['local', 'remote'].includes(mode)) {
   process.exit(1);
 }
 
-const envSource = path.join(__dirname, '..', `.env.${mode}`);
-const envTarget = path.join(__dirname, '..', '.env');
+const envSource = path.join(__dirname, '..', `env.${mode}`);
+const dbModeFile = path.join(__dirname, '..', '.db-mode');
 
 try {
   if (!fs.existsSync(envSource)) {
-    console.error(`❌ File .env.${mode} not found!`);
+    console.error(`❌ File env.${mode} not found!`);
     process.exit(1);
   }
 
-  // Copy the selected .env file
-  fs.copyFileSync(envSource, envTarget);
+  // Write DB_MODE to a file
+  fs.writeFileSync(dbModeFile, mode);
   
   console.log(`✅ Switched to ${mode.toUpperCase()} database configuration`);
-  console.log(`📝 Active config: .env.${mode}`);
+  console.log(`📝 Active config: env.${mode}`);
   
   // Display current configuration (without showing password)
-  const envContent = fs.readFileSync(envTarget, 'utf8');
+  const envContent = fs.readFileSync(envSource, 'utf8');
   const dbHost = envContent.match(/DB_HOST=(.+)/)?.[1] || 'unknown';
   const dbName = envContent.match(/DB_NAME=(.+)/)?.[1] || 'unknown';
   const dbUser = envContent.match(/DB_USER=(.+)/)?.[1] || 'unknown';
