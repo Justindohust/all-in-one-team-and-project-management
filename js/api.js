@@ -549,11 +549,16 @@ class DigiHubAPI {
   // SETTINGS
   // ==================
   async getUserSettings() {
-    if (!this.currentUser?.id) return null;
+    if (!this.currentUser?.id) {
+      throw new Error('User not authenticated');
+    }
     return this.request(`/settings/${this.currentUser.id}`);
   }
 
   async updateUserSettings(settings) {
+    if (!this.currentUser?.id) {
+      throw new Error('User not authenticated');
+    }
     return this.request(`/settings/${this.currentUser.id}`, {
       method: 'PUT',
       body: JSON.stringify(settings)
@@ -561,6 +566,9 @@ class DigiHubAPI {
   }
 
   async changePassword(currentPassword, newPassword) {
+    if (!this.currentUser?.id) {
+      throw new Error('User not authenticated');
+    }
     return this.request(`/settings/${this.currentUser.id}/change-password`, {
       method: 'POST',
       body: JSON.stringify({ currentPassword, newPassword })

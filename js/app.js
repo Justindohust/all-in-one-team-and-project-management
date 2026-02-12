@@ -607,6 +607,10 @@ class DigiHubApp {
   // ==================
   // UTILITY METHODS
   // ==================
+  getCurrentUser() {
+    return this.state.currentUser;
+  }
+
   getInitials(name) {
     if (!name) return '?';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
@@ -679,53 +683,15 @@ function hideLoading() {
   if (loader) loader.classList.add('hidden');
 }
 
-function showToast(message, type = 'info') {
-  const colors = {
-    success: 'bg-success',
-    error: 'bg-danger',
-    warning: 'bg-warning',
-    info: 'bg-primary-500'
-  };
-
-  const toast = document.createElement('div');
-  toast.className = `fixed bottom-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-[100] animate-slide-up`;
-  toast.innerHTML = `
-    <div class="flex items-center gap-3">
-      <span>${message}</span>
-      <button onclick="this.parentElement.parentElement.remove()" class="ml-2 hover:opacity-70">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
-    </div>
-  `;
-  
-  document.body.appendChild(toast);
-  
-  // Auto remove after 5 seconds
-  setTimeout(() => {
-    toast.remove();
-  }, 5000);
+// Deprecated: Use notificationManager instead
+// Kept for backward compatibility
+function showToast(message, type = 'info', options = {}) {
+  if (typeof notificationManager !== 'undefined') {
+    return notificationManager.show(message, type, options);
+  }
+  // Fallback if notification manager not loaded
+  console.warn('Notification manager not loaded. Message:', message);
 }
-
-// Add animation styles
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes slide-up {
-    from {
-      transform: translateY(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-  .animate-slide-up {
-    animation: slide-up 0.3s ease-out;
-  }
-`;
-document.head.appendChild(style);
 
 // Create global app instance and expose for other scripts
 const app = new DigiHubApp();

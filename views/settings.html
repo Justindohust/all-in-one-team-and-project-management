@@ -122,6 +122,9 @@
           </label>
         </div>
       </div>
+      <div class="mt-4 p-3 bg-primary-500/10 border border-primary-500/20 rounded-lg">
+        <p class="text-sm text-primary-300">💡 Changes to notification settings are saved automatically</p>
+      </div>
     </div>
     
     <!-- Security Settings -->
@@ -196,17 +199,17 @@
       <div class="space-y-4">
         <div class="flex items-center justify-between p-4 bg-slate-900/50 rounded-lg">
           <div class="flex items-center gap-4">
-            <div class="w-10 h-10 bg-slate-700 rounded-lg flex items-center justify-center text-xl">📧</div>
+            <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center text-xl">💬</div>
             <div>
               <p class="font-medium text-white">Slack</p>
               <p class="text-sm text-slate-400">Get notifications in Slack channels</p>
             </div>
           </div>
-          <button class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium rounded-lg">Connect</button>
+          <button onclick="connectIntegration('Slack')" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium rounded-lg transition-colors">Connect</button>
         </div>
         <div class="flex items-center justify-between p-4 bg-slate-900/50 rounded-lg">
           <div class="flex items-center gap-4">
-            <div class="w-10 h-10 bg-slate-700 rounded-lg flex items-center justify-center text-xl">📁</div>
+            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-xl">📁</div>
             <div>
               <p class="font-medium text-white">Google Drive</p>
               <p class="text-sm text-slate-400">Sync files with Google Drive</p>
@@ -216,14 +219,39 @@
         </div>
         <div class="flex items-center justify-between p-4 bg-slate-900/50 rounded-lg">
           <div class="flex items-center gap-4">
-            <div class="w-10 h-10 bg-slate-700 rounded-lg flex items-center justify-center text-xl">🐙</div>
+            <div class="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg flex items-center justify-center text-xl">🐙</div>
             <div>
               <p class="font-medium text-white">GitHub</p>
               <p class="text-sm text-slate-400">Link repositories and track commits</p>
             </div>
           </div>
-          <button class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium rounded-lg">Connect</button>
+          <button onclick="connectIntegration('GitHub')" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium rounded-lg transition-colors">Connect</button>
         </div>
+        <div class="flex items-center justify-between p-4 bg-slate-900/50 rounded-lg">
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center text-xl">📧</div>
+            <div>
+              <p class="font-medium text-white">Microsoft Teams</p>
+              <p class="text-sm text-slate-400">Collaborate with your team in Microsoft Teams</p>
+            </div>
+          </div>
+          <button onclick="connectIntegration('Microsoft Teams')" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium rounded-lg transition-colors">Connect</button>
+        </div>
+        <div class="flex items-center justify-between p-4 bg-slate-900/50 rounded-lg">
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center text-xl">📊</div>
+            <div>
+              <p class="font-medium text-white">Jira</p>
+              <p class="text-sm text-slate-400">Sync issues and track project progress</p>
+            </div>
+          </div>
+          <button onclick="connectIntegration('Jira')" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium rounded-lg transition-colors">Connect</button>
+        </div>
+      </div>
+      <div class="mt-6 p-4 bg-slate-900/50 border border-slate-700 rounded-lg">
+        <h4 class="font-medium text-white mb-2">Need another integration?</h4>
+        <p class="text-sm text-slate-400 mb-3">We're always looking to add more integrations. Let us know what you need!</p>
+        <button class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition-colors">Request Integration</button>
       </div>
     </div>
   </div>
