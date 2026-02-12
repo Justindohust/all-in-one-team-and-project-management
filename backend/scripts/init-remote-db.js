@@ -3,7 +3,7 @@
 const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '..', 'env.remote') });
 
 async function initRemoteDatabase() {
   console.log('🚀 Initializing remote database...\n');

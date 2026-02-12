@@ -32,11 +32,11 @@ services:
     container_name: digihub-backend
     restart: unless-stopped
     environment:
-      DB_HOST: postgres
+      DB_HOST: 103.179.191.109
       DB_PORT: 5432
       DB_NAME: digihub
-      DB_USER: digihub_user
-      DB_PASSWORD: digihub_secret_2026
+      DB_USER: postgres
+      DB_PASSWORD: 05122002.Duy
       JWT_SECRET: your-super-secret-jwt-key-change-this-in-production
       JWT_EXPIRES_IN: 7d
       PORT: 3001

@@ -89,9 +89,10 @@ router.get('/:id', async (req, res, next) => {
       [id]
     );
     
-    // Get project modules with tasks
+    // Get project modules with submodules and tasks
     const modules = await db.query(
       `SELECT m.*,
+              (SELECT COUNT(*) FROM submodules WHERE module_id = m.id) as submodule_count,
               (SELECT COUNT(*) FROM tasks WHERE module_id = m.id) as task_count
        FROM modules m
        WHERE m.project_id = $1
@@ -99,13 +100,39 @@ router.get('/:id', async (req, res, next) => {
       [id]
     );
     
-    // Get tasks for each module
+    // Get submodules and tasks for each module
     for (const module of modules.rows) {
-      const tasks = await db.query(
-        `SELECT t.* FROM tasks t WHERE t.module_id = $1 ORDER BY t.sort_order, t.created_at`,
+      // Get submodules for this module
+      const submodules = await db.query(
+        `SELECT s.*,
+                (SELECT COUNT(*) FROM tasks WHERE submodule_id = s.id) as task_count
+         FROM submodules s 
+         WHERE s.module_id = $1 
+         ORDER BY s.sort_order, s.created_at`,
         [module.id]
       );
-      module.tasks = tasks.rows;
+      
+      // Get tasks for each submodule
+      for (const submodule of submodules.rows) {
+        const submoduleTasks = await db.query(
+          `SELECT t.* FROM tasks t 
+           WHERE t.submodule_id = $1 
+           ORDER BY t.sort_order, t.created_at`,
+          [submodule.id]
+        );
+        submodule.tasks = submoduleTasks.rows;
+      }
+      
+      module.submodules = submodules.rows;
+      
+      // Also get tasks that belong directly to module (no submodule)
+      const moduleTasks = await db.query(
+        `SELECT t.* FROM tasks t 
+         WHERE t.module_id = $1 AND t.submodule_id IS NULL 
+         ORDER BY t.sort_order, t.created_at`,
+        [module.id]
+      );
+      module.tasks = moduleTasks.rows;
     }
     
     res.json({
@@ -134,8 +161,37 @@ router.get('/:id', async (req, res, next) => {
           startDate: m.start_date,
           dueDate: m.due_date,
           progress: m.progress,
+          submoduleCount: parseInt(m.submodule_count || 0),
           taskCount: parseInt(m.task_count),
-          tasks: m.tasks || []
+          submodules: (m.submodules || []).map(s => ({
+            id: s.id,
+            name: s.name,
+            description: s.description,
+            status: s.status,
+            priority: s.priority,
+            startDate: s.start_date,
+            dueDate: s.due_date,
+            progress: s.progress,
+            taskCount: parseInt(s.task_count || 0),
+            tasks: (s.tasks || []).map(t => ({
+              id: t.id,
+              title: t.title,
+              description: t.description,
+              status: t.status,
+              priority: t.priority,
+              dueDate: t.due_date,
+              assigneeId: t.assignee_id
+            }))
+          })),
+          tasks: (m.tasks || []).map(t => ({
+            id: t.id,
+            title: t.title,
+            description: t.description,
+            status: t.status,
+            priority: t.priority,
+            dueDate: t.due_date,
+            assigneeId: t.assignee_id
+          }))
         })),
         members: members.rows.map(m => ({
           id: m.id,
