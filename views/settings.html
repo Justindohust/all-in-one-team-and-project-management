@@ -44,10 +44,10 @@
     <div id="settings-profile" class="settings-content bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
       <h3 class="text-lg font-semibold text-white mb-6">Profile Settings</h3>
       <div class="flex items-center gap-6 mb-6">
-        <div id="profile-avatar" class="w-20 h-20 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-2xl text-white font-semibold">JD</div>
+        <div id="profile-avatar" class="w-20 h-20 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-2xl text-white font-semibold shadow-lg">JD</div>
         <div>
-          <button class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium rounded-lg">Change Photo</button>
-          <p class="text-xs text-slate-400 mt-2">JPG, PNG or GIF. Max 2MB</p>
+          <p class="text-sm font-medium text-white mb-2">Profile Photo</p>
+          <p class="text-xs text-slate-400">JPG, PNG or GIF. Max 2MB</p>
         </div>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -65,7 +65,8 @@
         </div>
         <div>
           <label class="block text-sm font-medium text-slate-300 mb-2">Role</label>
-          <input type="text" id="profile-role" value="" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+          <input type="text" id="profile-role" value="" readonly class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-400 cursor-not-allowed">
+          <p class="text-xs text-slate-500 mt-1">Role is managed by administrators</p>
         </div>
         <div class="md:col-span-2">
           <label class="block text-sm font-medium text-slate-300 mb-2">Bio</label>
@@ -131,32 +132,58 @@
     <div id="settings-security" class="settings-content hidden bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
       <h3 class="text-lg font-semibold text-white mb-6">Security Settings</h3>
       <div class="space-y-6">
+        <!-- Change Password -->
         <div>
           <h4 class="font-medium text-white mb-4">Change Password</h4>
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-slate-300 mb-2">Current Password</label>
-              <input type="password" id="current-password" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+              <input type="password" id="current-password" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Enter current password">
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-300 mb-2">New Password</label>
-              <input type="password" id="new-password" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+              <input type="password" id="new-password" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Minimum 6 characters">
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-300 mb-2">Confirm New Password</label>
-              <input type="password" id="confirm-password" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+              <input type="password" id="confirm-password" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Re-enter new password">
             </div>
-            <button onclick="updatePassword()" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg">Update Password</button>
+            <button onclick="updatePassword()" class="px-6 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg transition-colors">Update Password</button>
           </div>
         </div>
+
+        <!-- Password Requirements -->
         <div class="pt-6 border-t border-slate-700">
-          <h4 class="font-medium text-white mb-4">Two-Factor Authentication</h4>
-          <div class="flex items-center justify-between p-4 bg-slate-900/50 rounded-lg">
-            <div>
-              <p class="font-medium text-white">Enable 2FA</p>
-              <p class="text-sm text-slate-400">Add an extra layer of security to your account</p>
+          <h4 class="font-medium text-white mb-3">Password Requirements</h4>
+          <ul class="space-y-2 text-sm text-slate-400">
+            <li class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Minimum 6 characters
+            </li>
+            <li class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Must be different from current password
+            </li>
+          </ul>
+        </div>
+
+        <!-- Account Security Info -->
+        <div class="pt-6 border-t border-slate-700">
+          <h4 class="font-medium text-white mb-3">Account Security</h4>
+          <div class="p-4 bg-slate-900/50 rounded-lg">
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-success flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+              </svg>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-white">Your account is secure</p>
+                <p class="text-xs text-slate-400 mt-1">Last password change: Never changed</p>
+              </div>
             </div>
-            <button class="px-4 py-2 bg-success hover:bg-success/80 text-white text-sm font-medium rounded-lg">Enable</button>
           </div>
         </div>
       </div>
