@@ -519,62 +519,164 @@ function renderOverviewTab(content, item) {
 }
 
 // Render Activity Tab
-function renderActivityTab(content, item) {
-  content.innerHTML = `
-    <div class="space-y-4">
-      <!-- Add Comment Form -->
-      <div class="bg-slate-700/30 rounded-lg p-4">
-        <textarea
-          placeholder="Add a comment..."
-          rows="3"
-          class="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
-        ></textarea>
-        <div class="flex items-center justify-end gap-2 mt-2">
-          <button class="px-3 py-1.5 text-sm text-slate-400 hover:text-white transition-colors">Cancel</button>
-          <button class="px-4 py-1.5 bg-primary-500 hover:bg-primary-600 text-white text-sm rounded transition-colors">Comment</button>
-        </div>
+async function renderActivityTab(content, item) {
+  try {
+    console.log('[Activity Tab] Starting render for', item.type, item.realId);
+    
+    // Load activity tab template
+    const response = await fetch('views/activity-tab.html');
+    const template = await response.text();
+    content.innerHTML = template;
+    
+    console.log('[Activity Tab] Template loaded, DOM updated');
+    
+    // Map item type to entity type for API
+    const entityTypeMap = {
+      'PROJECT': 'project',
+      'MODULE': 'module',
+      'SUBMODULE': 'submodule',
+      'TASK': 'task'
+    };
+    
+    const entityType = entityTypeMap[item.type];
+    
+    // Validate entity ID
+    if (!item.realId) {
+      throw new Error('Invalid item: missing realId');
+    }
+    
+    // Wait for DOM to be ready, then initialize
+    await new Promise(resolve => setTimeout(resolve, 10));
+    
+    console.log('[Activity Tab] Initializing UI...');
+    initializeActivityTabUI();
+    
+    // Initialize activity manager
+    if (typeof activityManager !== 'undefined' && entityType) {
+      console.log('[Activity Tab] Initializing activityManager for', entityType, item.realId);
+      await activityManager.init(entityType, item.realId);
+    } else {
+      console.warn('[Activity Tab] activityManager not available or invalid entity type');
+    }
+    
+    console.log('[Activity Tab] Render complete');
+  } catch (error) {
+    console.error('Error rendering activity tab:', error);
+    content.innerHTML = `
+      <div class="text-center py-8 text-slate-400">
+        <p class="text-sm">Failed to load activities</p>
+        <p class="text-xs mt-2">${error.message}</p>
       </div>
+    `;
+  }
+}
+
+// Initialize activity tab UI elements
+function initializeActivityTabUI() {
+  console.log('[Activity Tab UI] Starting initialization...');
+  
+  // Set current user initials
+  const currentUser = api.currentUser;
+  if (currentUser) {
+    const initials = (currentUser.first_name?.[0] || '') + (currentUser.last_name?.[0] || '');
+    const initialsEl = document.getElementById('current-user-initials');
+    if (initialsEl) {
+      initialsEl.textContent = initials.toUpperCase() || '?';
+      console.log('[Activity Tab UI] Set user initials:', initials);
+    }
+  }
+  
+  // Setup comment submit button
+  const submitBtn = document.getElementById('comment-submit-btn');
+  const cancelBtn = document.getElementById('comment-cancel-btn');
+  const commentInput = document.getElementById('comment-input');
+  
+  console.log('[Activity Tab UI] Found elements:', {
+    submitBtn: !!submitBtn,
+    cancelBtn: !!cancelBtn,
+    commentInput: !!commentInput
+  });
+  
+  if (submitBtn && commentInput) {
+    // Remove existing listeners if any
+    const newSubmitBtn = submitBtn.cloneNode(true);
+    submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+    
+    console.log('[Activity Tab UI] Setting up submit button listener');
+    
+    newSubmitBtn.addEventListener('click', async () => {
+      console.log('[Comment Submit] Button clicked');
+      const content = commentInput.value.trim();
       
-      <!-- Activity Timeline -->
-      <div class="space-y-4">
-        <h5 class="text-sm font-semibold text-white">ACTIVITY LOG</h5>
+      if (!content) {
+        alert('Please enter a comment');
+        console.warn('[Comment Submit] Empty content');
+        return;
+      }
+      
+      // Disable button during submission
+      newSubmitBtn.disabled = true;
+      newSubmitBtn.textContent = 'Posting...';
+      
+      try {
+        console.log('[Comment Submit] Submitting:', content);
         
-        <div class="space-y-4">
-          <!-- Activity Item -->
-          <div class="flex gap-3">
-            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-xs text-white font-medium flex-shrink-0">
-              DG
-            </div>
-            <div class="flex-1">
-              <div class="bg-slate-700/30 rounded-lg p-3">
-                <div class="flex items-start justify-between mb-2">
-                  <span class="text-sm font-medium text-white">Đỗ Gia Đăng</span>
-                  <span class="text-xs text-slate-400">Created on 08/26/2025 8:14 AM</span>
-                </div>
-                <p class="text-sm text-slate-300">Đã tạo ${item.type.toLowerCase()} này</p>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Activity Item -->
-          <div class="flex gap-3">
-            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-xs text-white font-medium flex-shrink-0">
-              DG
-            </div>
-            <div class="flex-1">
-              <div class="bg-slate-700/30 rounded-lg p-3">
-                <div class="flex items-start justify-between mb-2">
-                  <span class="text-sm font-medium text-white">Đỗ Gia Đăng</span>
-                  <span class="text-xs text-slate-400">Last updated on 08/26/2025 8:14 AM</span>
-                </div>
-                <p class="text-sm text-slate-300">Đã cập nhật trạng thái thành <span class="text-primary-400">${translateStatus(item.status)}</span></p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
+        if (typeof activityManager === 'undefined') {
+          throw new Error('ActivityManager not available');
+        }
+        
+        await activityManager.submitComment(content);
+        commentInput.value = '';
+        console.log('[Comment Submit] Success!');
+        
+      } catch (error) {
+        console.error('[Comment Submit] Error:', error);
+        alert('Failed to post comment: ' + error.message);
+      } finally {
+        newSubmitBtn.disabled = false;
+        newSubmitBtn.textContent = 'Comment';
+      }
+    });
+    
+    // Enter key to submit (Ctrl+Enter or Cmd+Enter)
+    commentInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        console.log('[Comment Submit] Ctrl+Enter detected');
+        newSubmitBtn.click();
+      }
+    });
+    
+    console.log('[Activity Tab UI] Submit button ready');
+  } else {
+    console.error('[Activity Tab UI] Missing required elements!');
+  }
+  
+  if (cancelBtn && commentInput) {
+    const newCancelBtn = cancelBtn.cloneNode(true);
+    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+    
+    newCancelBtn.addEventListener('click', () => {
+      console.log('[Comment Cancel] Button clicked');
+      commentInput.value = '';
+      commentInput.blur();
+    });
+    
+    console.log('[Activity Tab UI] Cancel button ready');
+  }
+  
+  console.log('[Activity Tab UI] Initialization complete');
+}
+
+// Helper function to show notifications (reuse if exists)
+function showNotification(message, type = 'info') {
+  // Simple console log for now - can be enhanced with toast notifications
+  if (type === 'error') {
+    console.error(message);
+  } else if (type === 'warning') {
+    console.warn(message);
+  } else {
+    console.log(message);
+  }
 }
 
 // Render Files Tab

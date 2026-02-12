@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Comment Button</title>
+  <script src="/js/api.js"></script>
+  <script src="/js/activities.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #1e293b; color: white; }
+    .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+    .success { background: #166534; }
+    .error { background: #991b1b; }
+    button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    textarea { width: 100%; padding: 10px; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Test Comment Button</h1>
+  
+  <div id="status"></div>
+  
+  <h2>1. Check API & ActivityManager</h2>
+  <button onclick="testAPI()">Test API Object</button>
+  <button onclick="testActivityManager()">Test ActivityManager</button>
+  
+  <h2>2. Test Comment Submit</h2>
+  <textarea id="test-comment" rows="3" placeholder="Enter test comment..."></textarea>
+  <button onclick="testCommentSubmit()">Submit Comment</button>
+  
+  <h2>3. Load Activity Tab</h2>
+  <button onclick="loadActivityTab()">Load Activity Tab Template</button>
+  <div id="activity-container"></div>
+  
+  <script>
+    function showStatus(message, isError = false) {
+      const status = document.getElementById('status');
+      status.innerHTML = `<div class="status ${isError ? 'error' : 'success'}">${message}</div>`;
+      console.log(message);
+    }
+    
+    function testAPI() {
+      if (typeof api === 'undefined') {
+        showStatus('❌ API object not found!', true);
+        return;
+      }
+      showStatus('✅ API object exists');
+      console.log('API methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(api)));
+      
+      if (typeof api.createComment === 'function') {
+        showStatus('✅ API has createComment method');
+      } else {
+        showStatus('❌ API missing createComment method', true);
+      }
+    }
+    
+    function testActivityManager() {
+      if (typeof activityManager === 'undefined') {
+        showStatus('❌ activityManager not found!', true);
+        return;
+      }
+      showStatus('✅ activityManager exists');
+      console.log('ActivityManager methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(activityManager)));
+      
+      if (typeof activityManager.submitComment === 'function') {
+        showStatus('✅ activityManager has submitComment method');
+      } else {
+        showStatus('❌ activityManager missing submitComment method', true);
+      }
+    }
+    
+    async function testCommentSubmit() {
+      const textarea = document.getElementById('test-comment');
+      const content = textarea.value.trim();
+      
+      if (!content) {
+        showStatus('⚠️ Please enter some text', true);
+        return;
+      }
+      
+      try {
+        showStatus('⏳ Testing comment submit...');
+        
+        if (typeof activityManager === 'undefined') {
+          throw new Error('activityManager not found');
+        }
+        
+        // Mock init if needed
+        if (!activityManager.currentEntityType) {
+          showStatus('⚠️ ActivityManager not initialized, using mock data');
+          activityManager.currentEntityType = 'module';
+          activityManager.currentEntityId = 'a3000000-0000-0000-0000-000000000002';
+        }
+        
+        await activityManager.submitComment(content);
+        showStatus('✅ Comment submitted successfully!');
+        textarea.value = '';
+        
+      } catch (error) {
+        showStatus('❌ Error: ' + error.message, true);
+        console.error('Full error:', error);
+      }
+    }
+    
+    async function loadActivityTab() {
+      try {
+        showStatus('⏳ Loading activity tab template...');
+        
+        const response = await fetch('/views/activity-tab.html');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const html = await response.text();
+        document.getElementById('activity-container').innerHTML = html;
+        
+        showStatus('✅ Activity tab loaded! Check for buttons below.');
+        
+        // Try to initialize
+        setTimeout(() => {
+          const submitBtn = document.getElementById('comment-submit-btn');
+          const cancelBtn = document.getElementById('comment-cancel-btn');
+          const commentInput = document.getElementById('comment-input');
+          
+          showStatus(`Found elements: submitBtn=${!!submitBtn}, cancelBtn=${!!cancelBtn}, input=${!!commentInput}`);
+          
+          if (submitBtn) {
+            console.log('Submit button onclick:', submitBtn.onclick);
+            console.log('Submit button event listeners:', getEventListeners(submitBtn));
+          }
+        }, 100);
+        
+      } catch (error) {
+        showStatus('❌ Error loading activity tab: ' + error.message, true);
+        console.error('Full error:', error);
+      }
+    }
+    
+    // Auto-run tests on load
+    window.addEventListener('load', () => {
+      testAPI();
+      testActivityManager();
+    });
+  </script>
+</body>
+</html>

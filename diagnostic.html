@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Test - Activities</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #1e293b;
+      color: white;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .log {
+      background: #0f172a;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border-left: 3px solid #3b82f6;
+      font-size: 12px;
+      font-family: monospace;
+    }
+    .error { border-left-color: #ef4444; background: #450a0a; }
+    .success { border-left-color: #22c55e; background: #052e16; }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover { background: #2563eb; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Quick Diagnostic</h1>
+  <div id="logs"></div>
+  
+  <h2>Actions</h2>
+  <button onclick="checkAuth()">Check Auth</button>
+  <button onclick="testAPI()">Test Activities API</button>
+  <button onclick="location.reload()">Reload Page</button>
+  
+  <script src="/js/api.js"></script>
+  <script src="/js/activities.js"></script>
+  
+  <script>
+    function log(message, type = 'log') {
+      const div = document.createElement('div');
+      div.className = `log ${type}`;
+      div.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+      document.getElementById('logs').appendChild(div);
+      console.log(message);
+    }
+    
+    // Auto-check on load
+    window.addEventListener('load', () => {
+      log('=== Page Loaded ===');
+      
+      // Check API
+      if (typeof api === 'undefined') {
+        log('❌ API not loaded!', 'error');
+      } else {
+        log('✅ API loaded');
+        
+        // Check token validity
+        const token = localStorage.getItem('digihub_token');
+        if (!token) {
+          log('❌ No token found - need to login!', 'error');
+        } else {
+          log('Token: ' + token.substring(0, 20) + '...', 'success');
+          
+          // Decode JWT to check expiration
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const exp = new Date(payload.exp * 1000);
+            const now = new Date();
+            
+            if (exp < now) {
+              log('❌ Token EXPIRED at ' + exp.toLocaleString(), 'error');
+              log('Clearing expired token...', 'log');
+              localStorage.removeItem('digihub_token');
+              localStorage.removeItem('digihub_user');
+            } else {
+              log('✅ Token valid until ' + exp.toLocaleString(), 'success');
+            }
+          } catch (e) {
+            log('⚠️ Could not decode token: ' + e.message, 'error');
+          }
+        }
+        
+        log('User: ' + (api.currentUser ? api.currentUser.email : 'NOT SET'), api.currentUser ? 'success' : 'error');
+      }
+      
+      // Check ActivityManager
+      if (typeof activityManager === 'undefined') {
+        log('❌ ActivityManager not loaded!', 'error');
+      } else {
+        log('✅ ActivityManager loaded', 'success');
+      }
+    });
+    
+    function checkAuth() {
+      if (!api || !api.currentUser) {
+        log('❌ Not logged in!', 'error');
+        log('Redirecting to login...', 'log');
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1000);
+      } else {
+        log('✅ Logged in as: ' + api.currentUser.email, 'success');
+        log('Token present: ' + (api.token ? 'YES' : 'NO'),api.token ? 'success' : 'error');
+      }
+    }
+    
+    async function testAPI() {
+      log('Testing API call...');
+      
+      try {
+        // Use a known module ID
+        const response = await api.getActivities('module', 'a3000000-0000-0000-0000-000000000002', 1);
+        
+        log('API Response received:', 'success');
+        log('Success: ' + response.success, response.success ? 'success' : 'error');
+        
+        if (response.success) {
+          log('Activities count: ' + response.data.length, 'success');
+          log('Pagination: page ' + response.pagination.page + ' of ' + response.pagination.totalPages);
+        } else {
+          log('Error: ' + response.message, 'error');
+        }
+        
+        console.log('Full response:', response);
+        
+      } catch (error) {
+        log('❌ API call failed: ' + error.message, 'error');
+        console.error('Full error:', error);
+      }
+    }
+  </script>
+</body>
+</html>

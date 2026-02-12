@@ -33,6 +33,28 @@ class DigiHubAPI {
       const data = await response.json();
 
       if (!response.ok) {
+        // Handle 401 Unauthorized - token expired or invalid
+        if (response.status === 401) {
+          // Only show notification and redirect if user was logged in (had a token)
+          // Don't show on login failures (no token yet)
+          const hadToken = this.token !== null;
+          
+          if (hadToken) {
+            console.error('🔒 Token invalid or expired!');
+            this.clearAuth();
+            
+            // Show notification
+            this.showTokenExpiredNotification();
+            
+            // Redirect to login after a short delay
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 2000);
+          } else {
+            // Login failure - just clear auth without notification
+            this.clearAuth();
+          }
+        }
         throw new Error(data.message || 'API request failed');
       }
 
@@ -41,6 +63,68 @@ class DigiHubAPI {
       console.error(`API Error [${endpoint}]:`, error);
       throw error;
     }
+  }
+  
+  // Clear authentication data
+  clearAuth() {
+    this.token = null;
+    this.currentUser = null;
+    localStorage.removeItem('digihub_token');
+    localStorage.removeItem('digihub_user');
+  }
+  
+  // Show token expired notification
+  showTokenExpiredNotification() {
+    // Remove existing notification if any
+    const existing = document.getElementById('token-expired-notification');
+    if (existing) existing.remove();
+    
+    // Create notification
+    const notification = document.createElement('div');
+    notification.id = 'token-expired-notification';
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(239, 68, 68, 0.4);
+      z-index: 10000;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      animation: slideIn 0.3s ease-out;
+    `;
+    notification.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <svg style="width: 20px; height: 20px; flex-shrink: 0;" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+        </svg>
+        <div>
+          <div style="font-weight: 600; margin-bottom: 2px;">Session Expired</div>
+          <div style="font-size: 12px; opacity: 0.9;">Redirecting to login...</div>
+        </div>
+      </div>
+    `;
+    
+    // Add animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideIn {
+        from {
+          transform: translateX(400px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    document.body.appendChild(notification);
   }
 
   // ==================
@@ -491,6 +575,37 @@ class DigiHubAPI {
     return this.request(`/settings/workspace/${workspaceId}`, {
       method: 'PUT',
       body: JSON.stringify(settings)
+    });
+  }
+
+  // ==================
+  // ACTIVITIES & COMMENTS
+  // ==================
+  async getActivities(entityType, entityId, page = 1, limit = 50) {
+    return this.request(`/activities/${entityType}/${entityId}?page=${page}&limit=${limit}`);
+  }
+
+  async getCommentReplies(commentId) {
+    return this.request(`/activities/comments/${commentId}/replies`);
+  }
+
+  async createComment(entityType, entityId, content, parentId = null) {
+    return this.request('/activities/comments', {
+      method: 'POST',
+      body: JSON.stringify({ entityType, entityId, content, parentId })
+    });
+  }
+
+  async updateComment(commentId, content) {
+    return this.request(`/activities/comments/${commentId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ content })
+    });
+  }
+
+  async deleteComment(commentId) {
+    return this.request(`/activities/comments/${commentId}`, {
+      method: 'DELETE'
     });
   }
 }
