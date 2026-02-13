@@ -9,7 +9,6 @@ Thư mục này chứa tất cả documentation cho DigiHub project.
 - [CHANGELOG.md](../CHANGELOG.md) - Version history và change log
 - [CONTRIBUTING.md](../CONTRIBUTING.md) - Contributing guidelines
 - [LICENSE](../LICENSE) - MIT License
-- [COMMON_ERRORS.md](./COMMON_ERRORS.md) - Troubleshooting guide và common errors
 
 ### Module Documentation
 - [PROJECTS_MODULE.md](./PROJECTS_MODULE.md) - Original projects module documentation
@@ -30,7 +29,6 @@ Thư mục này chứa tất cả documentation cho DigiHub project.
 ```
 docs/
 ├── README.md                          # Documentation index (this file)
-├── COMMON_ERRORS.md                   # Troubleshooting guide
 ├── PROJECTS_MODULE.md                 # Projects module v1 documentation
 └── PROJECTS_MODULE_ENHANCED.md        # Projects module v2 (4-level hierarchy)
 
@@ -57,7 +55,6 @@ Technical docs:
 ### For Users
 - **Features Overview**: [Main README](../README.md#features)
 - **Projects Guide**: [Enhanced Projects Module](./PROJECTS_MODULE_ENHANCED.md)
-- **Troubleshooting**: [Common Errors](./COMMON_ERRORS.md)
 
 ### Recent Updates
 - **Latest Changes**: [CHANGELOG](../CHANGELOG.md)

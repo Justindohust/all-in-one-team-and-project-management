@@ -9,7 +9,9 @@
     "db:init": "node database/init.js",
     "db:switch": "node scripts/switch-db.js",
     "db:init:remote": "node scripts/init-remote-db.js",
-    "db:status": "node scripts/db-status.js"
+    "db:status": "node scripts/db-status.js",
+    "hash-password": "node scripts/hash-password.js",
+    "fix-passwords": "node scripts/fix-passwords.js"
   },
   "dependencies": {
     "express": "^4.18.2",

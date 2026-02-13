@@ -1,4 +1,4 @@
-const db = require('./config/database');
+const db = require('../config/database');
 
 async function fixPasswords() {
   try {
@@ -18,3 +18,4 @@ async function fixPasswords() {
 }
 
 fixPasswords();
+
