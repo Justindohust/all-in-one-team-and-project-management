@@ -187,19 +187,35 @@ function renderTableView() {
 function createTableRow(item) {
   const row = document.createElement('tr');
   const isSelected = selectedItem?.displayId === item.displayId;
-  row.style.cssText = `border-bottom:1px solid rgba(51,65,85,0.5);cursor:pointer;transition:background 0.15s;${isSelected ? 'background:rgba(59,130,246,0.1)' : ''}`;
+  row.style.cssText = `border-bottom:1px solid rgba(51,65,85,0.5);cursor:pointer;transition:background 0.15s;position:relative;${isSelected ? 'background:rgba(59,130,246,0.1)' : ''}`;
   row.dataset.id = item.displayId;
   row.dataset.type = item.type;
-  
-  row.onmouseenter = () => { if (!isSelected) row.style.background = 'rgba(51,65,85,0.3)'; };
-  row.onmouseleave = () => { if (!isSelected) row.style.background = ''; };
-  
+
+  // Add hover button for adding children (only for PROJECT, MODULE, SUBMODULE)
+  const canAddChild = ['PROJECT', 'MODULE', 'SUBMODULE'].includes(item.type);
+
+  row.onmouseenter = () => {
+    if (!isSelected) row.style.background = 'rgba(51,65,85,0.3)';
+    if (canAddChild) {
+      const addBtn = row.querySelector('.add-child-btn');
+      if (addBtn) addBtn.style.display = 'flex';
+    }
+  };
+  row.onmouseleave = () => {
+    if (!isSelected) row.style.background = '';
+    if (canAddChild) {
+      const addBtn = row.querySelector('.add-child-btn');
+      if (addBtn) addBtn.style.display = 'none';
+    }
+  };
+
   // Click to show detail panel
   row.onclick = (e) => {
     if (e.target.closest('.item-name-editable')) return;
+    if (e.target.closest('.add-child-btn')) return;
     selectTableItem(item);
   };
-  
+
   // Double click to expand/collapse
   if (item.hasChildren) {
     row.ondblclick = (e) => {
@@ -208,13 +224,28 @@ function createTableRow(item) {
       toggleRowExpand(item.displayId);
     };
   }
-  
+
   const cellStyle = 'padding:10px 8px;font-size:13px;vertical-align:middle;white-space:nowrap;';
-  
+
   // 1. ID Column
   const tdId = document.createElement('td');
-  tdId.style.cssText = cellStyle + 'padding-left:16px;color:#cbd5e1;font-family:monospace;';
+  tdId.style.cssText = cellStyle + 'padding-left:16px;color:#cbd5e1;font-family:monospace;position:relative;';
   tdId.textContent = item.displayId;
+
+  // Add child button (hidden by default)
+  if (canAddChild) {
+    const addChildBtn = document.createElement('button');
+    addChildBtn.className = 'add-child-btn';
+    addChildBtn.style.cssText = 'display:none;position:absolute;left:0;top:50%;transform:translateY(-50%);width:20px;height:20px;background:#3b82f6;border-radius:4px;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:bold;border:none;cursor:pointer;z-index:5;';
+    addChildBtn.innerHTML = '+';
+    addChildBtn.title = `Add ${getChildType(item.type)}`;
+    addChildBtn.onclick = (e) => {
+      e.stopPropagation();
+      handleAddChild(item);
+    };
+    tdId.appendChild(addChildBtn);
+  }
+
   row.appendChild(tdId);
   
   // 2. Subject Column (with hierarchy indent + expand arrow + name)
@@ -269,43 +300,48 @@ function createTableRow(item) {
   tdStatus.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500;background:${sc}22;color:${sc}"><span style="width:6px;height:6px;border-radius:50%;background:${sc}"></span>${translateStatus(item.status)}</span>`;
   row.appendChild(tdStatus);
   
-  // 5. Assignee Column
+  // 5. Assignee Column (clickable)
   const tdAssignee = document.createElement('td');
-  tdAssignee.style.cssText = cellStyle + 'color:#cbd5e1;';
+  tdAssignee.style.cssText = cellStyle + 'color:#cbd5e1;cursor:pointer;';
   if (item.assignee) {
-    tdAssignee.innerHTML = `<div style="display:flex;align-items:center;gap:6px"><div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:600;flex-shrink:0">${item.assignee.charAt(0).toUpperCase()}</div><span style="overflow:hidden;text-overflow:ellipsis;font-size:12px">${item.assignee}</span></div>`;
+    tdAssignee.innerHTML = `<div class="assignee-cell" style="display:flex;align-items:center;gap:6px"><div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:600;flex-shrink:0">${item.assignee.charAt(0).toUpperCase()}</div><span style="overflow:hidden;text-overflow:ellipsis;font-size:12px">${item.assignee}</span></div>`;
   } else {
-    tdAssignee.innerHTML = '<span style="color:#475569">-</span>';
+    tdAssignee.innerHTML = '<span class="assignee-cell" style="color:#3b82f6">+ Assign</span>';
   }
+  tdAssignee.onclick = (e) => {
+    e.stopPropagation();
+    const target = e.target.closest('.assignee-cell') || e.target;
+    showAssigneeDropdown(target, item);
+  };
   row.appendChild(tdAssignee);
-  
-  // 6. Priority Column
+
+  // 6. Priority Column (clickable)
   const tdPriority = document.createElement('td');
-  tdPriority.style.cssText = cellStyle;
+  tdPriority.style.cssText = cellStyle + 'cursor:pointer;';
   const prioColorMap = { 'low':'#64748b','medium':'#3b82f6','normal':'#3b82f6','bình thường':'#3b82f6','high':'#f97316','urgent':'#ef4444' };
   const prioKey = item.priority ? item.priority.toLowerCase() : 'normal';
   const pc = prioColorMap[prioKey] || '#3b82f6';
-  tdPriority.innerHTML = `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500;background:${pc}22;color:${pc}">${getPriorityIcon(item.priority)} ${item.priority}</span>`;
+  tdPriority.innerHTML = `<span class="priority-cell" style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500;background:${pc}22;color:${pc}">${getPriorityIcon(item.priority)} ${item.priority}</span>`;
+  tdPriority.onclick = (e) => {
+    e.stopPropagation();
+    const target = e.target.closest('.priority-cell') || e.target;
+    showPriorityDropdown(target, item);
+  };
   row.appendChild(tdPriority);
-  
-  // 7. Start Date Column
+
+  // 7. Start Date Column (clickable)
   const tdStart = document.createElement('td');
-  tdStart.style.cssText = cellStyle + 'color:#94a3b8;font-size:12px;';
-  tdStart.textContent = item.startDate || '-';
+  tdStart.style.cssText = cellStyle + 'color:#94a3b8;font-size:12px;cursor:pointer;';
+  tdStart.innerHTML = `<span class="date-cell" data-field="startDate">${item.startDate || '+ Set date'}</span>`;
+  tdStart.onclick = (e) => {
+    e.stopPropagation();
+    const target = e.target.closest('.date-cell') || e.target;
+    target.dataset.field = 'startDate';
+    showDatePicker(target, item);
+  };
   row.appendChild(tdStart);
-  
-  // 8. Finish Date Column
-  const tdFinish = document.createElement('td');
-  tdFinish.style.cssText = cellStyle + 'font-size:12px;';
-  if (item.finishDate) {
-    const isOverdue = new Date(item.finishDate) < new Date() && item.status !== 'completed' && item.status !== 'done';
-    tdFinish.style.color = isOverdue ? '#f87171' : '#94a3b8';
-    tdFinish.textContent = item.finishDate;
-  } else {
-    tdFinish.style.color = '#475569';
-    tdFinish.textContent = '-';
-  }
-  row.appendChild(tdFinish);
+
+  // 8. Finish Date Column (removed - info moved to detail panel)
   
   return row;
 }
@@ -455,16 +491,18 @@ function renderOverviewTab(content, item) {
       <div class="space-y-3 bg-slate-700/20 rounded-xl p-4">
         <div class="flex items-center justify-between">
           <span class="text-sm text-slate-400">Assignee</span>
-          ${item.assignee ? `
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-xs text-white font-bold shadow-lg">
-                ${item.assignee.charAt(0).toUpperCase()}
+          <div data-field="assignee">
+            ${item.assignee ? `
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-xs text-white font-bold shadow-lg">
+                  ${item.assignee.charAt(0).toUpperCase()}
+                </div>
+                <span class="text-sm text-white font-medium">${item.assignee}</span>
               </div>
-              <span class="text-sm text-white font-medium">${item.assignee}</span>
-            </div>
-          ` : `
-            <button class="text-sm text-primary-400 hover:text-primary-300 font-medium">+ Assign</button>
-          `}
+            ` : `
+              <button class="text-sm text-primary-400 hover:text-primary-300 font-medium">+ Assign</button>
+            `}
+          </div>
         </div>
       </div>
     </div>
@@ -489,9 +527,17 @@ function renderOverviewTab(content, item) {
           <span class="text-sm text-slate-400">Start Date</span>
           <span class="text-sm text-white font-medium">${item.startDate || '<span class="text-slate-500">Not set</span>'}</span>
         </div>
-        <div class="flex items-center justify-between py-2">
+        <div class="flex items-center justify-between py-2 border-b border-slate-600/30">
           <span class="text-sm text-slate-400">Due Date</span>
           <span class="text-sm ${item.finishDate ? 'text-orange-400 font-medium' : 'text-slate-500'}">${item.finishDate || 'Not set'}</span>
+        </div>
+        <div class="flex items-center justify-between py-2 border-b border-slate-600/30">
+          <span class="text-sm text-slate-400">Created</span>
+          <span class="text-sm text-slate-300">${item.created_at ? formatDateTime(item.created_at) : 'N/A'}</span>
+        </div>
+        <div class="flex items-center justify-between py-2">
+          <span class="text-sm text-slate-400">Last Updated</span>
+          <span class="text-sm text-slate-300">${item.updated_at ? formatDateTime(item.updated_at) : 'N/A'}</span>
         </div>
       </div>
     </div>
@@ -823,22 +869,151 @@ function renderWatchTab(content, item) {
 
 // Detail item actions
 function editDetailItem() {
-  if (selectedItem) {
-    const typeMap = {
-      'PROJECT': 'project',
-      'MODULE': 'module',
-      'SUBMODULE': 'submodule',
-      'TASK': 'task'
+  if (!selectedItem) return;
+
+  // Enable edit mode for detail panel
+  const detailPanel = document.getElementById('detail-panel-content');
+  if (!detailPanel) return;
+
+  // Toggle edit mode
+  const isEditing = detailPanel.classList.contains('edit-mode');
+
+  if (!isEditing) {
+    // Enter edit mode
+    detailPanel.classList.add('edit-mode');
+    makeFieldsEditable();
+
+    // Change button to "Save"
+    const editBtn = document.querySelector('[onclick="editDetailItem()"]');
+    if (editBtn) {
+      editBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Save';
+      editBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+      editBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+    }
+  }else {
+    // Save changes
+    saveDetailChanges();
+  }
+}
+
+function makeFieldsEditable() {
+  const detailPanel = document.getElementById('detail-panel-content');
+  if (!detailPanel) return;
+
+  // Make assignee editable
+  const assigneeDiv = detailPanel.querySelector('[data-field="assignee"]');
+  if (assigneeDiv) {
+    const currentValue = assigneeDiv.textContent.trim();
+    assigneeDiv.innerHTML = `
+      <select class="w-full bg-slate-700 text-white px-3 py-2 rounded border border-slate-600 focus:border-blue-500 focus:outline-none">
+        <option value="">Not assigned</option>
+        <option value="user1" ${currentValue === 'John Doe' ? 'selected' : ''}>John Doe</option>
+        <option value="user2" ${currentValue === 'Alice Smith' ? 'selected' : ''}>Alice Smith</option>
+        <option value="user3" ${currentValue === 'Mike Kim' ? 'selected' : ''}>Mike Kim</option>
+        <option value="user4" ${currentValue === 'Tina Nguyen' ? 'selected' : ''}>Tina Nguyen</option>
+      </select>
+    `;
+  }
+
+  // Make priority editable
+  const priorityDiv = detailPanel.querySelector('[data-field="priority"]');
+  if (priorityDiv) {
+    const currentValue = selectedItem.priority || 'Bình thường';
+    priorityDiv.innerHTML = `
+      <select class="w-full bg-slate-700 text-white px-3 py-2 rounded border border-slate-600 focus:border-blue-500 focus:outline-none">
+        <option value="urgent" ${currentValue === 'Urgent' ? 'selected' : ''}>🔴 Urgent</option>
+        <option value="high" ${currentValue === 'High' ? 'selected' : ''}>🟠 High</option>
+        <option value="medium" ${currentValue === 'Medium' || currentValue === 'Bình thường' ? 'selected' : ''}>🟡 Medium</option>
+        <option value="low" ${currentValue === 'Low' ? 'selected' : ''}>🟢 Low</option>
+      </select>
+    `;
+  }
+
+  // Make dates editable
+  const startDateDiv = detailPanel.querySelector('[data-field="startDate"]');
+  if (startDateDiv) {
+    const currentValue = selectedItem.startDate || '';
+    startDateDiv.innerHTML = `
+      <input type="date" value="${currentValue}"
+        class="w-full bg-slate-700 text-white px-3 py-2 rounded border border-slate-600 focus:border-blue-500 focus:outline-none">
+    `;
+  }
+
+  const dueDateDiv = detailPanel.querySelector('[data-field="dueDate"]');
+  if (dueDateDiv) {
+    const currentValue = selectedItem.finishDate || '';
+    dueDateDiv.innerHTML = `
+      <input type="date" value="${currentValue}"
+        class="w-full bg-slate-700 text-white px-3 py-2 rounded border border-slate-600 focus:border-blue-500 focus:outline-none">
+    `;
+  }
+}
+
+async function saveDetailChanges() {
+  const detailPanel = document.getElementById('detail-panel-content');
+  if (!detailPanel) return;
+
+  try {
+    // Get updated values
+    const assigneeSelect = detailPanel.querySelector('[data-field="assignee"] select');
+    const prioritySelect = detailPanel.querySelector('[data-field="priority"] select');
+    const startDateInput = detailPanel.querySelector('[data-field="startDate"] input');
+    const dueDateInput = detailPanel.querySelector('[data-field="dueDate"] input');
+
+    const updates = {
+      assignee: assigneeSelect ? assigneeSelect.value : null,
+      priority: prioritySelect ? prioritySelect.value : null,
+      start_date: startDateInput ? startDateInput.value : null,
+      due_date: dueDateInput ? dueDateInput.value : null
     };
-    handleNodeUpdate({
-      id: `${typeMap[selectedItem.type]}-${selectedItem.realId}`,
-      name: selectedItem.name,
-      type: typeMap[selectedItem.type],
-      status: selectedItem.status,
-      priority: selectedItem.priority,
-      startDate: selectedItem.startDate,
-      dueDate: selectedItem.finishDate
+
+    // Call API to update
+    const typeMap = {
+      'PROJECT': 'projects',
+      'MODULE': 'modules',
+      'SUBMODULE': 'submodules',
+      'TASK': 'tasks'
+    };
+
+    const endpoint = typeMap[selectedItem.type];
+    const response = await api.request(`/${endpoint}/${selectedItem.realId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
     });
+
+    if (response.success) {
+      // Update local data
+      Object.assign(selectedItem, {
+        assignee: updates.assignee,
+        priority: updates.priority,
+        startDate: updates.start_date,
+        finishDate: updates.due_date
+      });
+
+      // Exit edit mode
+      detailPanel.classList.remove('edit-mode');
+
+      // Restore button
+      const editBtn = document.querySelector('[onclick="editDetailItem()"]');
+      if (editBtn) {
+        editBtn.innerHTML = '<i class="fas fa-edit mr-2"></i>Edit';
+        editBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+        editBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+      }
+
+      // Refresh detail panel
+      renderDetailPanel(selectedItem);
+
+      // Reload table to reflect changes
+      await loadProjectsData();
+
+      showNotification('Success', 'Changes saved successfully', 'success');
+    }else {
+      throw new Error(response.message || 'Failed to save changes');
+    }
+  }catch (error) {
+    console.error('Error saving changes:', error);
+    showNotification('Error', 'Failed to save changes: ' + error.message, 'error');
   }
 }
 
@@ -848,19 +1023,41 @@ function duplicateDetailItem() {
   }
 }
 
-function deleteDetailItem() {
-  if (selectedItem) {
+async function deleteDetailItem() {
+  if (!selectedItem) return;
+
+  // Confirm deletion
+  if (!confirm(`Are you sure you want to delete "${selectedItem.name}"?`)) {
+    return;
+  }
+
+  try {
     const typeMap = {
-      'PROJECT': 'project',
-      'MODULE': 'module',
-      'SUBMODULE': 'submodule',
-      'TASK': 'task'
+      'PROJECT': 'projects',
+      'MODULE': 'modules',
+      'SUBMODULE': 'submodules',
+      'TASK': 'tasks'
     };
-    handleNodeDelete({
-      id: `${typeMap[selectedItem.type]}-${selectedItem.realId}`,
-      name: selectedItem.name,
-      type: typeMap[selectedItem.type]
+
+    const endpoint = typeMap[selectedItem.type];
+    const response = await api.request(`/${endpoint}/${selectedItem.realId}`, {
+      method: 'DELETE'
     });
+
+    if (response.success) {
+      // Close detail panel
+      closeDetailPanel();
+
+      // Reload data
+      await loadProjectsData();
+
+      showNotification('Success', `${selectedItem.type} deleted successfully`, 'success');
+    } else {
+      throw new Error(response.message || 'Failed to delete');
+    }
+  } catch (error) {
+    console.error('Error deleting item:', error);
+    showNotification('Error', 'Failed to delete: ' + error.message, 'error');
   }
 }
 
@@ -1128,6 +1325,56 @@ function showTableError(message) {
   }
 }
 
+// Helper function to format date and time
+function formatDateTime(dateString) {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  // If less than 1 minute ago
+  if (diffMins < 1) return 'Just now';
+  // If less than 1 hour ago
+  if (diffMins < 60) return `${diffMins}min${diffMins > 1 ? 's' : ''} ago`;
+  // If less than 24 hours ago
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''}ago`;
+  // If less than 7 days ago
+  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+
+  // Otherwise show full date
+  const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+  return date.toLocaleDateString('en-US', options);
+}
+
+// Helper function to get child type based on parent type
+function getChildType(parentType) {
+  const childMap = {
+    'PROJECT': 'Module',
+    'MODULE': 'Submodule',
+    'SUBMODULE': 'Task'
+  };
+  return childMap[parentType] || 'Item';
+}
+
+// Handle adding a child item
+function handleAddChild(parentItem) {
+  const childType = getChildType(parentItem.type);
+  console.log(`Adding ${childType} to ${parentItem.type}: ${parentItem.name}`);
+
+  // Show notification
+  if (window.showNotification) {
+    window.showNotification(`Add ${childType}feature coming soon!`, 'info');
+  } else {
+    alert(`Add ${childType} to "${parentItem.name}"\n\nThis feature will open a modal to create a new ${childType}.`);
+  }
+
+  // TODO: Open modal to create child item
+  // openTreeNodeModal(parentItem, childType.toLowerCase());
+}
+
 // Export functions
 window.initProjectsTableView = initProjectsTableView;
 window.setProjectView = setProjectView;
@@ -1139,3 +1386,6 @@ window.deleteDetailItem = deleteDetailItem;
 window.initTreeViewFromTableData = initTreeViewFromTableData;
 window.handleTreeNodeSelect = handleTreeNodeSelect;
 window.loadProjectsData = loadProjectsData;
+window.formatDateTime = formatDateTime;
+window.handleAddChild = handleAddChild;
+window.getChildType = getChildType;
