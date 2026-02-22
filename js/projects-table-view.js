@@ -1593,20 +1593,110 @@ function getChildType(parentType) {
   return childMap[parentType] || 'Item';
 }
 
-// Handle adding a child item
-function handleAddChild(parentItem) {
+// Handle adding a child item - inserts an inline editable row immediately
+async function handleAddChild(parentItem) {
   const childType = getChildType(parentItem.type);
-  console.log(`Adding ${childType} to ${parentItem.type}: ${parentItem.name}`);
+  if (!childType) return;
 
-  // Show notification
-  if (window.showNotification) {
-    window.showNotification(`Add ${childType}feature coming soon!`, 'info');
-  } else {
-    alert(`Add ${childType} to "${parentItem.name}"\n\nThis feature will open a modal to create a new ${childType}.`);
+  if (!expandedRows.has(parentItem.displayId)) {
+    expandedRows.add(parentItem.displayId);
   }
 
-  // TODO: Open modal to create child item
-  // openTreeNodeModal(parentItem, childType.toLowerCase());
+  const tempId = 'new-' + Date.now();
+  const childTypeUpper = childType.toUpperCase();
+  const tempItem = {
+    displayId: tempId,
+    realId: null,
+    parentId: parentItem.displayId,
+    level: parentItem.level + 1,
+    type: childTypeUpper,
+    name: '',
+    status: 'active',
+    assignee: null,
+    priority: 'Medium',
+    startDate: null,
+    finishDate: null,
+    hasChildren: false,
+    children: [],
+    _isNew: true
+  };
+
+  const parentIdx = allProjectsData.findIndex(i => i.displayId === parentItem.displayId);
+  let insertIdx = parentIdx + 1;
+  for (let i = parentIdx + 1; i < allProjectsData.length; i++) {
+    if (allProjectsData[i].level <= parentItem.level) break;
+    insertIdx = i + 1;
+  }
+  allProjectsData.splice(insertIdx, 0, tempItem);
+  parentItem.hasChildren = true;
+
+  renderTableView();
+
+  const tbody = document.getElementById('projects-table-body');
+  const newRow = tbody ? tbody.querySelector(`tr[data-id="${tempId}"]`) : null;
+  if (!newRow) return;
+
+  newRow.style.background = 'rgba(59,130,246,0.12)';
+
+  const nameSpan = newRow.querySelector('td:nth-child(2) span[style*="color:#e2e8f0"]');
+  if (nameSpan) activateNewItemEdit(nameSpan, tempItem, parentItem);
+}
+
+// Activate inline editing for a brand-new item row
+function activateNewItemEdit(nameSpan, tempItem, parentItem) {
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'item-name-editable';
+  const typeLower = tempItem.type.charAt(0) + tempItem.type.slice(1).toLowerCase();
+  input.placeholder = `New ${typeLower} name...`;
+  input.style.cssText = 'background:#1e293b;color:#e2e8f0;font-size:13px;padding:3px 8px;border-radius:4px;border:1px solid #3b82f6;outline:none;width:220px;min-width:120px;font-family:inherit;';
+
+  nameSpan.replaceWith(input);
+  input.focus();
+
+  const cancel = () => {
+    const idx = allProjectsData.findIndex(i => i.displayId === tempItem.displayId);
+    if (idx !== -1) allProjectsData.splice(idx, 1);
+    parentItem.hasChildren = allProjectsData.some(i => i.parentId === parentItem.displayId);
+    renderTableView();
+  };
+
+  const save = async () => {
+    const name = input.value.trim();
+    if (!name) { cancel(); return; }
+    try {
+      const creators = {
+        'MODULE':    () => api.createModule({ project_id: parentItem.realId, name }),
+        'SUBMODULE': () => api.createSubmodule({ module_id: parentItem.realId, name }),
+        'TASK':      () => api.createTask({ submodule_id: parentItem.realId, title: name, name })
+      };
+      const creator = creators[tempItem.type];
+      if (!creator) { cancel(); return; }
+      const result = await creator();
+      if (result && result.success) {
+        const label = tempItem.type.charAt(0) + tempItem.type.slice(1).toLowerCase();
+        showNotification('Success', `${label} created`, 'success');
+        await loadProjectsData();
+      } else {
+        throw new Error((result && result.message) || 'Failed to create');
+      }
+    } catch (err) {
+      console.error('Create child error:', err);
+      showNotification('Error', err.message || 'Failed to create item', 'error');
+      cancel();
+    }
+  };
+
+  let saved = false;
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); saved = true; save(); }
+    else if (e.key === 'Escape') { e.preventDefault(); saved = true; cancel(); }
+  });
+  setTimeout(() => {
+    input.addEventListener('blur', () => {
+      if (!saved) { saved = true; if (input.value.trim()) save(); else cancel(); }
+    });
+  }, 150);
 }
 
 // Test Case Management Functions
