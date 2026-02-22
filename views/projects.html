@@ -23,6 +23,11 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
           </svg>
         </button>
+        <button onclick="setProjectView('gantt')" id="view-gantt-btn" class="px-3 py-1.5 text-sm text-slate-400 hover:text-white rounded transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+        </button>
       </div>
       
       <button class="p-2 text-slate-400 hover:text-white transition-colors">
@@ -122,18 +127,40 @@
         </div>
       </div>
     </div>
-    
+
+    <!-- Gantt View Container (hidden by default) -->
+    <div id="gantt-view-container" class="hidden flex-1 bg-slate-800/50 border border-slate-700/50 rounded-l-xl overflow-hidden flex flex-col">
+      <div class="bg-slate-800/80 border-b border-slate-700 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+        <span class="text-sm font-medium text-slate-400">GANTT CHART</span>
+      </div>
+      <div id="gantt-view-content" class="flex-1 overflow-auto p-4">
+        <div class="flex items-center justify-center h-64 text-slate-400">
+          <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+            <p>Loading gantt chart...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Detail Panel (Initially hidden, slides in when item selected) -->
     <div id="project-detail-panel" class="hidden w-[500px] bg-slate-800/50 border-l border-slate-700/50 rounded-r-xl overflow-hidden flex flex-col shadow-2xl backdrop-blur-sm">
       <!-- Panel Header with Tabs -->
       <div class="bg-gradient-to-br from-slate-800/90 to-slate-900/90 border-b border-slate-700 px-6 py-4">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-xl font-bold text-white">Details</h3>
-          <button onclick="closeDetailPanel()" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all duration-200">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
+          <div class="flex items-center gap-2">
+            <button onclick="expandToFormView()" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all duration-200" title="Expand to full view">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+              </svg>
+            </button>
+            <button onclick="closeDetailPanel()" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all duration-200">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
         </div>
         
         <!-- Tabs -->
@@ -147,8 +174,8 @@
           <button onclick="switchDetailTab('files')" class="detail-tab flex-1 px-3 py-2 text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-md transition-all duration-200" data-tab="files">
             FILES
           </button>
-          <button onclick="switchDetailTab('relations')" class="detail-tab flex-1 px-3 py-2 text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-md transition-all duration-200" data-tab="relations">
-            RELATIONS
+          <button onclick="switchDetailTab('test')" class="detail-tab flex-1 px-3 py-2 text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-md transition-all duration-200" data-tab="test">
+            <span id="test-status-icon" class="mr-1"></span>TEST
           </button>
         </div>
       </div>
@@ -159,6 +186,26 @@
           <!-- Content will be dynamically loaded -->
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Full Form View Modal -->
+<div id="form-view-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div class="bg-slate-900 rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-slate-700">
+    <!-- Modal Header -->
+    <div class="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-4 border-b border-slate-700 flex items-center justify-between">
+      <h2 class="text-xl font-bold text-white" id="form-view-title">Item Details</h2>
+      <button onclick="closeFormView()" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Modal Content -->
+    <div id="form-view-content" class="flex-1 overflow-y-auto p-6">
+      <!-- Content will be dynamically loaded -->
     </div>
   </div>
 </div>

@@ -33,7 +33,7 @@ async function loadProjectsData() {
 function flattenProjectsHierarchy(projectGroups) {
   const flatList = [];
   let idCounter = 1;
-  
+
   projectGroups.forEach(group => {
     if (group.projects) {
       group.projects.forEach(project => {
@@ -54,7 +54,7 @@ function flattenProjectsHierarchy(projectGroups) {
           children: []
         };
         flatList.push(projectItem); // Parent first!
-        
+
         // Then add modules
         if (project.modules) {
           project.modules.forEach(module => {
@@ -75,7 +75,7 @@ function flattenProjectsHierarchy(projectGroups) {
             };
             projectItem.children.push(moduleItem);
             flatList.push(moduleItem); // Module before its children
-            
+
             // Add submodules (if exists)
             if (module.submodules) {
               module.submodules.forEach(submodule => {
@@ -96,7 +96,7 @@ function flattenProjectsHierarchy(projectGroups) {
                 };
                 moduleItem.children.push(submoduleItem);
                 flatList.push(submoduleItem); // Submodule before its tasks
-                
+
                 // Add tasks to submodule
                 if (submodule.tasks) {
                   submodule.tasks.forEach(task => {
@@ -107,7 +107,7 @@ function flattenProjectsHierarchy(projectGroups) {
                 }
               });
             }
-            
+
             // Add tasks directly to module if no submodules
             if (module.tasks && (!module.submodules || module.submodules.length === 0)) {
               module.tasks.forEach(task => {
@@ -121,7 +121,7 @@ function flattenProjectsHierarchy(projectGroups) {
       });
     }
   });
-  
+
   return flatList; // Already in correct order: parent before children
 }
 
@@ -157,7 +157,7 @@ function isItemVisible(item) {
 function renderTableView() {
   const tbody = document.getElementById('projects-table-body');
   if (!tbody) return;
-  
+
   if (allProjectsData.length === 0) {
     tbody.innerHTML = `
       <tr><td colspan="8" style="text-align:center;padding:80px 16px;color:#94a3b8">
@@ -173,9 +173,9 @@ function renderTableView() {
     `;
     return;
   }
-  
+
   tbody.innerHTML = '';
-  
+
   allProjectsData.forEach(item => {
     if (isItemVisible(item)) {
       tbody.appendChild(createTableRow(item));
@@ -236,9 +236,11 @@ function createTableRow(item) {
   if (canAddChild) {
     const addChildBtn = document.createElement('button');
     addChildBtn.className = 'add-child-btn';
-    addChildBtn.style.cssText = 'display:none;position:absolute;left:0;top:50%;transform:translateY(-50%);width:20px;height:20px;background:#3b82f6;border-radius:4px;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:bold;border:none;cursor:pointer;z-index:5;';
+    addChildBtn.style.cssText = 'display:none;position:absolute;left:2px;top:50%;transform:translateY(-50%);width:22px;height:22px;background:#3b82f6;border-radius:5px;align-items:center;justify-content:center;color:#fff;font-size:16px;line-height:1;font-weight:bold;border:none;cursor:pointer;z-index:5;box-shadow:0 1px 4px rgba(59,130,246,0.5);transition:background 0.15s;';
     addChildBtn.innerHTML = '+';
     addChildBtn.title = `Add ${getChildType(item.type)}`;
+    addChildBtn.onmouseenter = () => { addChildBtn.style.background = '#2563eb'; };
+    addChildBtn.onmouseleave = () => { addChildBtn.style.background = '#3b82f6'; };
     addChildBtn.onclick = (e) => {
       e.stopPropagation();
       handleAddChild(item);
@@ -247,21 +249,21 @@ function createTableRow(item) {
   }
 
   row.appendChild(tdId);
-  
+
   // 2. Subject Column (with hierarchy indent + expand arrow + name)
   const tdSubject = document.createElement('td');
   tdSubject.style.cssText = cellStyle + 'white-space:normal;';
-  
+
   const subjectWrap = document.createElement('div');
   subjectWrap.style.cssText = 'display:flex;align-items:center;gap:4px;';
-  
+
   // Indent spacer
   if (item.level > 0) {
     const spacer = document.createElement('span');
     spacer.style.cssText = `display:inline-block;width:${item.level * 20}px;flex-shrink:0;`;
     subjectWrap.appendChild(spacer);
   }
-  
+
   // Expand/collapse arrow or dot
   const arrowBtn = document.createElement('span');
   arrowBtn.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex-shrink:0;color:#94a3b8;';
@@ -274,24 +276,24 @@ function createTableRow(item) {
     arrowBtn.onclick = (e) => { e.stopPropagation(); toggleRowExpand(item.displayId); };
   }
   subjectWrap.appendChild(arrowBtn);
-  
+
   // Name text
   const nameEl = document.createElement('span');
   nameEl.style.cssText = 'color:#e2e8f0;overflow:hidden;text-overflow:ellipsis;';
   nameEl.textContent = item.name;
   nameEl.ondblclick = (e) => { e.stopPropagation(); makeNameEditable(nameEl, item); };
   subjectWrap.appendChild(nameEl);
-  
+
   tdSubject.appendChild(subjectWrap);
   row.appendChild(tdSubject);
-  
+
   // 3. Type Column
   const tdType = document.createElement('td');
   tdType.style.cssText = cellStyle;
   const typeColorMap = { 'PROJECT':'#60a5fa','MODULE':'#a78bfa','SUBMODULE':'#818cf8','TASK':'#34d399' };
   tdType.innerHTML = `<span style="color:${typeColorMap[item.type]||'#94a3b8'};font-size:12px;font-weight:500">${item.type}</span>`;
   row.appendChild(tdType);
-  
+
   // 4. Status Column
   const tdStatus = document.createElement('td');
   tdStatus.style.cssText = cellStyle;
@@ -299,7 +301,7 @@ function createTableRow(item) {
   const sc = statusColors[item.status] || '#94a3b8';
   tdStatus.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500;background:${sc}22;color:${sc}"><span style="width:6px;height:6px;border-radius:50%;background:${sc}"></span>${translateStatus(item.status)}</span>`;
   row.appendChild(tdStatus);
-  
+
   // 5. Assignee Column (clickable)
   const tdAssignee = document.createElement('td');
   tdAssignee.style.cssText = cellStyle + 'color:#cbd5e1;cursor:pointer;';
@@ -342,7 +344,7 @@ function createTableRow(item) {
   row.appendChild(tdStart);
 
   // 8. Finish Date Column (removed - info moved to detail panel)
-  
+
   return row;
 }
 
@@ -378,9 +380,9 @@ function selectTableItem(item) {
 function showDetailPanel(item) {
   const panel = document.getElementById('project-detail-panel');
   if (!panel) return;
-  
+
   panel.classList.remove('hidden');
-  
+
   // Render current tab content
   renderDetailTabContent(item);
 }
@@ -399,7 +401,7 @@ function closeDetailPanel() {
 // Switch detail tab
 function switchDetailTab(tabName) {
   currentDetailTab = tabName;
-  
+
   // Update tab buttons with new style
   document.querySelectorAll('.detail-tab').forEach(btn => {
     if (btn.dataset.tab === tabName) {
@@ -410,7 +412,7 @@ function switchDetailTab(tabName) {
       btn.classList.add('text-slate-400', 'hover:bg-slate-700/50');
     }
   });
-  
+
   // Render tab content
   if (selectedItem) {
     renderDetailTabContent(selectedItem);
@@ -421,7 +423,7 @@ function switchDetailTab(tabName) {
 function renderDetailTabContent(item) {
   const content = document.getElementById('detail-content');
   if (!content) return;
-  
+
   switch (currentDetailTab) {
     case 'overview':
       renderOverviewTab(content, item);
@@ -432,8 +434,8 @@ function renderDetailTabContent(item) {
     case 'files':
       renderFilesTab(content, item);
       break;
-    case 'relations':
-      renderRelationsTab(content, item);
+    case 'test':
+      renderTestTab(content, item);
       break;
     case 'watch':
       renderWatchTab(content, item);
@@ -449,14 +451,14 @@ function renderOverviewTab(content, item) {
     'SUBMODULE': 'M4 6h16M4 10h16M4 14h16M4 18h16',
     'TASK': 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'
   };
-  
+
   const typeColors = {
     'PROJECT': 'text-blue-400',
     'MODULE': 'text-purple-400',
     'SUBMODULE': 'text-indigo-400',
     'TASK': 'text-green-400'
   };
-  
+
   content.innerHTML = `
     <!-- Item Header -->
     <div class="mb-6 p-4 bg-gradient-to-br from-slate-700/30 to-slate-800/30 rounded-xl border border-slate-600/50">
@@ -479,7 +481,7 @@ function renderOverviewTab(content, item) {
         </div>
       </div>
     </div>
-    
+
     <!-- People Section -->
     <div class="mb-6">
       <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
@@ -506,7 +508,7 @@ function renderOverviewTab(content, item) {
         </div>
       </div>
     </div>
-    
+
     <!-- Details -->
     <div class="mb-6">
       <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
@@ -518,47 +520,81 @@ function renderOverviewTab(content, item) {
       <div class="space-y-3 bg-slate-700/20 rounded-xl p-4">
         <div class="flex items-center justify-between py-2 border-b border-slate-600/30">
           <span class="text-sm text-slate-400">Priority</span>
-          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold ${getPriorityBadgeClass(item.priority)}">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold ${getPriorityBadgeClass(item.priority)} cursor-pointer" onclick="showPriorityDropdown(this, ${JSON.stringify(item).replace(/"/g, '&quot;')})">
             ${getPriorityIcon(item.priority)}
             ${item.priority}
           </span>
         </div>
         <div class="flex items-center justify-between py-2 border-b border-slate-600/30">
           <span class="text-sm text-slate-400">Start Date</span>
-          <span class="text-sm text-white font-medium">${item.startDate || '<span class="text-slate-500">Not set</span>'}</span>
+          <span class="text-sm text-white font-medium cursor-pointer hover:text-primary-400" onclick="showDatePicker(this, ${JSON.stringify(item).replace(/"/g, '&quot;')})" data-field="startDate">${item.startDate || '<span class="text-slate-500">+ Set date</span>'}</span>
         </div>
         <div class="flex items-center justify-between py-2 border-b border-slate-600/30">
           <span class="text-sm text-slate-400">Due Date</span>
-          <span class="text-sm ${item.finishDate ? 'text-orange-400 font-medium' : 'text-slate-500'}">${item.finishDate || 'Not set'}</span>
+          <span class="text-sm ${item.finishDate ? 'text-orange-400 font-medium' : 'text-slate-500'}cursor-pointer hover:text-primary-400" onclick="showDatePicker(this, ${JSON.stringify(item).replace(/"/g, '&quot;')})" data-field="finishDate">${item.finishDate || '+ Set date'}</span>
+        </div>
+        <div class="flex items-center justify-between py-2 border-b border-slate-600/30">
+          <span class="text-sm text-slate-400">Progress</span>
+          <div class="flex items-center gap-2 flex-1 max-w-[200px]">
+            <div class="flex-1 h-2 bg-slate-600 rounded-full overflow-hidden">
+              <div class="h-full bg-primary-500 transition-all" style="width: ${item.progress || 0}%"></div>
+            </div>
+            <span class="text-sm text-white font-medium">${item.progress || 0}%</span>
+          </div>
+        </div>
+        <div class="flex items-center justify-between py-2 border-b border-slate-600/30">
+          <span class="text-sm text-slate-400">Estimated Hours</span>
+          <span class="text-sm text-white font-medium">${item.estimatedHours || '-'}</span>
+        </div>
+        <div class="flex items-center justify-between py-2 border-b border-slate-600/30">
+          <span class="text-sm text-slate-400">Actual Hours</span>
+          <span class="text-sm text-white font-medium">${item.actualHours || '-'}</span>
         </div>
         <div class="flex items-center justify-between py-2 border-b border-slate-600/30">
           <span class="text-sm text-slate-400">Created</span>
           <span class="text-sm text-slate-300">${item.created_at ? formatDateTime(item.created_at) : 'N/A'}</span>
         </div>
-        <div class="flex items-center justify-between py-2">
+        <div class="flex items-center justify-between py-2 border-b border-slate-600/30">
           <span class="text-sm text-slate-400">Last Updated</span>
           <span class="text-sm text-slate-300">${item.updated_at ? formatDateTime(item.updated_at) : 'N/A'}</span>
         </div>
+        <div class="flex items-center justify-between py-2">
+          <span class="text-sm text-slate-400">Tags</span>
+          <div class="flex gap-1 flex-wrap">
+            ${item.tags && item.tags.length > 0 ? item.tags.map(tag => `
+              <span class="px-2 py-0.5 bg-primary-500/20 text-primary-400 text-xs rounded">${tag}</span>
+            `).join('') : '<span class="text-sm text-slate-500">No tags</span>'}
+          </div>
+        </div>
       </div>
     </div>
-    
+
+    <!-- Description Section -->
+    <div class="mb-6">
+      <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/>
+        </svg>
+        Description
+      </h5>
+      <div class="bg-slate-700/20 rounded-xl p-4">
+        <p class="text-sm text-slate-300 whitespace-pre-wrap">${item.description || '<span class="text-slate-500 italic">No description provided</span>'}</p>
+      </div>
+    </div>
+
     <!-- Action Buttons -->
     <div class="flex gap-2 pt-4">
-      <button onclick="editDetailItem()" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg shadow-primary-500/20">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-        </svg>
-        Edit
-      </button>
-      <button onclick="duplicateDetailItem()" class="px-3 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition-all duration-200">
+      <button onclick="duplicateDetailItem()" class="flex-1 px-3 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
         </svg>
+        Duplicate
       </button>
-      <button onclick="deleteDetailItem()" class="px-3 py-2.5 bg-danger/20 hover:bg-danger/30 text-danger text-sm font-medium rounded-lg transition-all duration-200">
+      <button onclick="deleteDetailItem()" class="px-3 py-2.5 bg-danger/20 hover:bg-danger/30 text-danger text-sm font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
         </svg>
+        Delete
       </button>
     </div>
   `;
@@ -568,14 +604,14 @@ function renderOverviewTab(content, item) {
 async function renderActivityTab(content, item) {
   try {
     console.log('[Activity Tab] Starting render for', item.type, item.realId);
-    
+
     // Load activity tab template
     const response = await fetch('views/activity-tab.html');
     const template = await response.text();
     content.innerHTML = template;
-    
+
     console.log('[Activity Tab] Template loaded, DOM updated');
-    
+
     // Map item type to entity type for API
     const entityTypeMap = {
       'PROJECT': 'project',
@@ -583,20 +619,20 @@ async function renderActivityTab(content, item) {
       'SUBMODULE': 'submodule',
       'TASK': 'task'
     };
-    
+
     const entityType = entityTypeMap[item.type];
-    
+
     // Validate entity ID
     if (!item.realId) {
       throw new Error('Invalid item: missing realId');
     }
-    
+
     // Wait for DOM to be ready, then initialize
     await new Promise(resolve => setTimeout(resolve, 10));
-    
+
     console.log('[Activity Tab] Initializing UI...');
     initializeActivityTabUI();
-    
+
     // Initialize activity manager
     if (typeof activityManager !== 'undefined' && entityType) {
       console.log('[Activity Tab] Initializing activityManager for', entityType, item.realId);
@@ -604,7 +640,7 @@ async function renderActivityTab(content, item) {
     } else {
       console.warn('[Activity Tab] activityManager not available or invalid entity type');
     }
-    
+
     console.log('[Activity Tab] Render complete');
   } catch (error) {
     console.error('Error rendering activity tab:', error);
@@ -620,7 +656,7 @@ async function renderActivityTab(content, item) {
 // Initialize activity tab UI elements
 function initializeActivityTabUI() {
   console.log('[Activity Tab UI] Starting initialization...');
-  
+
   // Set current user initials
   const currentUser = api.currentUser;
   if (currentUser) {
@@ -631,50 +667,50 @@ function initializeActivityTabUI() {
       console.log('[Activity Tab UI] Set user initials:', initials);
     }
   }
-  
+
   // Setup comment submit button
   const submitBtn = document.getElementById('comment-submit-btn');
   const cancelBtn = document.getElementById('comment-cancel-btn');
   const commentInput = document.getElementById('comment-input');
-  
+
   console.log('[Activity Tab UI] Found elements:', {
     submitBtn: !!submitBtn,
     cancelBtn: !!cancelBtn,
     commentInput: !!commentInput
   });
-  
+
   if (submitBtn && commentInput) {
     // Remove existing listeners if any
     const newSubmitBtn = submitBtn.cloneNode(true);
     submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
-    
+
     console.log('[Activity Tab UI] Setting up submit button listener');
-    
+
     newSubmitBtn.addEventListener('click', async () => {
       console.log('[Comment Submit] Button clicked');
       const content = commentInput.value.trim();
-      
+
       if (!content) {
         alert('Please enter a comment');
         console.warn('[Comment Submit] Empty content');
         return;
       }
-      
+
       // Disable button during submission
       newSubmitBtn.disabled = true;
       newSubmitBtn.textContent = 'Posting...';
-      
+
       try {
         console.log('[Comment Submit] Submitting:', content);
-        
+
         if (typeof activityManager === 'undefined') {
           throw new Error('ActivityManager not available');
         }
-        
+
         await activityManager.submitComment(content);
         commentInput.value = '';
         console.log('[Comment Submit] Success!');
-        
+
       } catch (error) {
         console.error('[Comment Submit] Error:', error);
         alert('Failed to post comment: ' + error.message);
@@ -683,7 +719,7 @@ function initializeActivityTabUI() {
         newSubmitBtn.textContent = 'Comment';
       }
     });
-    
+
     // Enter key to submit (Ctrl+Enter or Cmd+Enter)
     commentInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
@@ -691,25 +727,25 @@ function initializeActivityTabUI() {
         newSubmitBtn.click();
       }
     });
-    
+
     console.log('[Activity Tab UI] Submit button ready');
   } else {
     console.error('[Activity Tab UI] Missing required elements!');
   }
-  
+
   if (cancelBtn && commentInput) {
     const newCancelBtn = cancelBtn.cloneNode(true);
     cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-    
+
     newCancelBtn.addEventListener('click', () => {
       console.log('[Comment Cancel] Button clicked');
       commentInput.value = '';
       commentInput.blur();
     });
-    
+
     console.log('[Activity Tab UI] Cancel button ready');
   }
-  
+
   console.log('[Activity Tab UI] Initialization complete');
 }
 
@@ -738,7 +774,7 @@ function renderFilesTab(content, item) {
           Upload
         </button>
       </div>
-      
+
       <!-- Drag and Drop Area -->
       <div class="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center hover:border-primary-500 transition-colors cursor-pointer">
         <svg class="w-12 h-12 mx-auto mb-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -747,7 +783,7 @@ function renderFilesTab(content, item) {
         <p class="text-sm text-slate-300 mb-1">Drag and drop files here</p>
         <p class="text-xs text-slate-400">or click to browse</p>
       </div>
-      
+
       <!-- File List -->
       <div class="space-y-2">
         <p class="text-sm text-slate-400">No files attached yet</p>
@@ -757,68 +793,108 @@ function renderFilesTab(content, item) {
 }
 
 // Render Relations Tab
-function renderRelationsTab(content, item) {
-  // Find related items (parent and children)
-  const parent = item.parentId ? allProjectsData.find(i => i.displayId === item.parentId) : null;
-  const children = allProjectsData.filter(i => i.parentId === item.displayId);
-  
+// Render Test Tab
+function renderTestTab(content, item) {
+  // Get test data from item (if exists)
+  const testData = item.testData || {
+    testcases: [],
+    latestResult: null,
+    currentSession: null
+  };
+
+  const latestResult = testData.latestResult;
+  const resultIcon = latestResult
+    ? (latestResult.status === 'passed' ? '✅' : latestResult.status === 'failed' ? '❌' : '⏳')
+    : '';
+
+  // Update tab icon
+  const tabIcon = document.getElementById('test-status-icon');
+  if (tabIcon) tabIcon.textContent = resultIcon;
+
   content.innerHTML = `
     <div class="space-y-4">
+      <!-- Header -->
       <div class="flex items-center justify-between">
-        <h5 class="text-sm font-semibold text-white">RELATIONSHIPS</h5>
-        <button class="flex items-center gap-2 px-3 py-1.5 bg-primary-500 hover:bg-primary-600 text-white text-sm rounded transition-colors">
+        <h5 class="text-sm font-semibold text-white flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+          </svg>
+          TEST CASES
+        </h5>
+        <button onclick="addTestCase('${item.displayId}')" class="flex items-center gap-2 px-3 py-1.5 bg-primary-500 hover:bg-primary-600 text-white text-sm rounded-lg transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
           </svg>
-          Add
+          Add Test Case
         </button>
       </div>
-      
-      ${parent ? `
-        <div class="space-y-2">
-          <p class="text-xs text-slate-400 uppercase font-semibold">Parent</p>
-          <div class="flex items-center gap-3 p-3 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors cursor-pointer">
-            <div class="w-8 h-8 rounded bg-slate-600 flex items-center justify-center">
-              <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-              </svg>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm text-white font-medium truncate">${parent.name}</p>
-              <p class="text-xs text-slate-400">${parent.type} #${parent.displayId}</p>
+
+      <!-- Latest Test Result -->
+      ${latestResult ? `
+        <div class="p-4 bg-${latestResult.status === 'passed' ? 'green' : 'red'}-500/10 border border-${latestResult.status === 'passed' ? 'green' : 'red'}-500/30 rounded-lg">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">${resultIcon}</span>
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-white">Latest Test: ${latestResult.status.toUpperCase()}</p>
+              <p class="text-xs text-slate-400">${latestResult.date}- ${latestResult.tester}</p>
             </div>
           </div>
+          ${latestResult.note ? `<p class="mt-2 text-sm text-slate-300">${latestResult.note}</p>` : ''}
         </div>
       ` : ''}
-      
-      ${children.length > 0 ? `
-        <div class="space-y-2">
-          <p class="text-xs text-slate-400 uppercase font-semibold">Children (${children.length})</p>
-          <div class="space-y-2">
-            ${children.map(child => `
-              <div class="flex items-center gap-3 p-3 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors cursor-pointer">
-                <div class="w-8 h-8 rounded bg-slate-600 flex items-center justify-center">
-                  <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                  </svg>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm text-white font-medium truncate">${child.name}</p>
-                  <p class="text-xs text-slate-400">${child.type} #${child.displayId}</p>
-                </div>
+
+      <!-- Test Cases List -->
+      <div class="space-y-2">
+        ${testData.testcases.length > 0 ? testData.testcases.map((tc, idx) => `
+          <div class="p-3 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
+            <div class="flex items-start gap-3">
+              <input type="checkbox" id="tc-${idx}" class="mt-1 w-4 h-4 rounded border-slate-600 text-primary-500 focus:ring-primary-500">
+              <div class="flex-1">
+                <label for="tc-${idx}" class="text-sm text-white font-medium cursor-pointer">${tc.title}</label>
+                ${tc.description ? `<p class="text-xs text-slate-400 mt-1">${tc.description}</p>` : ''}
+                ${tc.lastResult ? `
+                  <div class="mt-2 flex items-center gap-2">
+                    <span class="text-xs px-2 py-0.5 rounded ${tc.lastResult === 'passed' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
+                      ${tc.lastResult === 'passed' ? '✓ Passed' : '✗ Failed'}
+                    </span>
+                    <span class="text-xs text-slate-500">${tc.lastTestDate}</span>
+                  </div>
+                ` : ''}
               </div>
-            `).join('')}
+              <button onclick="editTestCase('${item.displayId}', ${idx})" class="p-1 text-slate-400 hover:text-white">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+              </button>
+              <button onclick="deleteTestCase('${item.displayId}', ${idx})" class="p-1 text-slate-400 hover:text-red-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+            </div>
           </div>
-        </div>
-      ` : ''}
-      
-      ${!parent && children.length === 0 ? `
-        <div class="text-center py-8 text-slate-400">
-          <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        `).join('') : `
+          <div class="text-center py-8 text-slate-400">
+            <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            <p class="text-sm">No test cases yet</p>
+            <button onclick="addTestCase('${item.displayId}')" class="mt-3 text-primary-400 hover:text-primary-300 text-sm font-medium">
+              + Add your first test case
+            </button>
+          </div>
+        `}
+      </div>
+
+      <!-- Start Test Session Button -->
+      ${testData.testcases.length > 0 ? `
+        <button onclick="startTestSession('${item.displayId}')" class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
-          <p class="text-sm">No relationships yet</p>
-        </div>
+          Start Test Session
+        </button>
       ` : ''}
     </div>
   `;
@@ -837,7 +913,7 @@ function renderWatchTab(content, item) {
           Add Watcher
         </button>
       </div>
-      
+
       <div class="bg-slate-700/30 rounded-lg p-4">
         <label class="flex items-center gap-3 cursor-pointer">
           <input type="checkbox" class="w-4 h-4 rounded border-slate-600 bg-slate-700 text-primary-500 focus:ring-2 focus:ring-primary-500">
@@ -852,7 +928,7 @@ function renderWatchTab(content, item) {
           </div>
         </label>
       </div>
-      
+
       <div class="space-y-2">
         <p class="text-xs text-slate-400 uppercase font-semibold">Current Watchers</p>
         <div class="text-center py-8 text-slate-400">
@@ -1064,28 +1140,41 @@ async function deleteDetailItem() {
 // View switching
 function setProjectView(viewType) {
   currentProjectView = viewType;
-  
+
   // Update buttons
   document.getElementById('view-table-btn').classList.toggle('bg-slate-700', viewType === 'table');
   document.getElementById('view-table-btn').classList.toggle('text-white', viewType === 'table');
   document.getElementById('view-table-btn').classList.toggle('text-slate-400', viewType !== 'table');
-  
+
   document.getElementById('view-tree-btn').classList.toggle('bg-slate-700', viewType === 'tree');
   document.getElementById('view-tree-btn').classList.toggle('text-white', viewType === 'tree');
   document.getElementById('view-tree-btn').classList.toggle('text-slate-400', viewType !== 'tree');
-  
+
+  document.getElementById('view-gantt-btn').classList.toggle('bg-slate-700', viewType === 'gantt');
+  document.getElementById('view-gantt-btn').classList.toggle('text-white', viewType === 'gantt');
+  document.getElementById('view-gantt-btn').classList.toggle('text-slate-400', viewType !== 'gantt');
+
   const tableContainer = document.getElementById('table-view-container');
   const treeContainer = document.getElementById('tree-view-container');
-  
+  const ganttContainer = document.getElementById('gantt-view-container');
+
   // Show/hide containers
   if (viewType === 'table') {
     if (tableContainer) tableContainer.classList.remove('hidden');
     if (treeContainer) treeContainer.classList.add('hidden');
+    if (ganttContainer) ganttContainer.classList.add('hidden');
   } else if (viewType === 'tree') {
     if (tableContainer) tableContainer.classList.add('hidden');
     if (treeContainer) treeContainer.classList.remove('hidden');
+    if (ganttContainer) ganttContainer.classList.add('hidden');
     // Initialize tree view if not already done
     initTreeViewFromTableData();
+  }else if (viewType === 'gantt') {
+    if (tableContainer) tableContainer.classList.add('hidden');
+    if (treeContainer) treeContainer.classList.add('hidden');
+    if (ganttContainer) ganttContainer.classList.remove('hidden');
+    // Render gantt chart
+    renderGanttChart();
   }
 }
 
@@ -1093,14 +1182,14 @@ function setProjectView(viewType) {
 function initTreeViewFromTableData() {
   const container = document.getElementById('projects-treeview-page');
   if (!container) return;
-  
+
   // If tree view already initialized and has data, just return
   if (window._projectTreeViewInitialized && projectTreeView) return;
-  
+
   // Use app.state.projectGroups if available
   if (app.state.projectGroups && app.state.projectGroups.length > 0) {
     const treeData = transformProjectGroupsToTree(app.state.projectGroups);
-    
+
     projectTreeView = new AdvancedTreeView(container, {
       data: treeData,
       allowDrag: true,
@@ -1114,13 +1203,156 @@ function initTreeViewFromTableData() {
       onDelete: handleNodeDelete,
       onMove: handleNodeMove
     });
-    
+
     window._projectTreeViewInitialized = true;
   } else {
     // Data not loaded yet, fetch it
     loadTreeViewData();
   }
 }
+
+// Render Gantt Chart
+function renderGanttChart() {
+  const container = document.getElementById('gantt-view-content');
+  if (!container) return;
+
+  if (!allProjectsData || allProjectsData.length === 0) {
+    container.innerHTML = '<div class="text-center py-8 text-slate-400">No data available</div>';
+    return;
+  }
+
+  // Filter items with dates
+  const itemsWithDates = allProjectsData.filter(item => item.startDate || item.finishDate);
+
+  if (itemsWithDates.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-12 text-slate-400">
+        <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        <p class="text-lg font-medium">No items with dates</p>
+        <p class="text-sm mt-2">Add start and due dates to items to see them in the Gantt chart</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Calculate date range
+  let minDate = null;
+  let maxDate = null;
+
+  itemsWithDates.forEach(item => {
+    if (item.startDate) {
+      const start = new Date(item.startDate);
+      if (!minDate || start < minDate) minDate = start;
+    }
+    if (item.finishDate) {
+      const end = new Date(item.finishDate);
+      if (!maxDate || end > maxDate) maxDate = end;
+    }
+  });
+
+  // Add padding to date range
+  if (minDate) minDate.setDate(minDate.getDate() - 7);
+  if (maxDate) maxDate.setDate(maxDate.getDate() + 7);
+
+  // Calculate total days
+  const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
+
+  // Generate month headers
+  const months = [];
+  let currentDate = new Date(minDate);
+  while (currentDate <= maxDate) {
+    const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    const daysInMonth = monthEnd.getDate();
+
+    months.push({
+      name: currentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      days: daysInMonth,
+      startDate: new Date(monthStart)
+    });
+
+    currentDate.setMonth(currentDate.getMonth() + 1);
+  }
+
+  // Build month headers HTML
+  const monthsHtml = months.map(month =>
+    `<div class="border-r border-slate-600 px-2 py-3 text-center text-xs font-medium text-slate-400" style="min-width: ${month.days * 30}px;">
+      ${month.name}
+    </div>`
+  ).join('');
+
+  // Build gantt rows HTML
+  const rowsHtml = itemsWithDates.map((item) => {
+    const start = item.startDate ? new Date(item.startDate) : null;
+    const end = item.finishDate ? new Date(item.finishDate) : null;
+
+    let leftPercent = 0;
+    let widthPercent = 0;
+    let duration = 0;
+
+    if (start && end) {
+      const startDays = Math.ceil((start - minDate) / (1000 * 60 * 60 * 24));
+      const endDays = Math.ceil((end - minDate) / (1000 * 60 * 60 * 24));
+      duration = endDays - startDays;
+
+      leftPercent = (startDays / totalDays) * 100;
+      widthPercent = (duration / totalDays) * 100;
+    } else if (start) {
+      const startDays = Math.ceil((start - minDate) / (1000 * 60 * 60 * 24));
+      duration = 7;
+
+      leftPercent = (startDays / totalDays) * 100;
+      widthPercent = (duration / totalDays) * 100;
+    }
+
+    const typeColor = {
+      'PROJECT': 'bg-purple-500',
+      'MODULE': 'bg-blue-500',
+      'SUBMODULE': 'bg-green-500',
+      'TASK': 'bg-orange-500'
+    }[item.type] || 'bg-slate-500';
+
+    const barHtml = start ?
+      `<div class="absolute ${typeColor} rounded-lg px-2 py-1 text-xs text-white font-medium shadow-lg cursor-pointer hover:opacity-90 transition-opacity flex items-center justify-center"
+           style="left: ${leftPercent}%; width: ${widthPercent}%; min-width: 60px; height: 24px;"
+           onclick="showItemDetail('${item.displayId}')">
+        ${duration}d
+      </div>` : '';
+
+    return `
+      <div class="flex border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors" style="min-height: 48px;">
+        <div class="w-64 px-4 py-3 border-r border-slate-600 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full ${typeColor}"></span>
+          <span class="text-sm text-white truncate">${item.name}</span>
+        </div>
+        <div class="flex-1 relative py-3">
+          ${barHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Render Gantt chart
+  container.innerHTML = `
+    <div class="gantt-chart" style="min-width: ${totalDays * 30}px;">
+      <div class="gantt-header bg-slate-700/50 sticky top-0 z-10 border-b border-slate-600">
+        <div class="flex">
+          <div class="w-64 px-4 py-3 border-r border-slate-600 font-semibold text-sm text-slate-300">Task</div>
+          <div class="flex-1 flex">
+            ${monthsHtml}
+          </div>
+        </div>
+      </div>
+      <div class="gantt-body">
+        ${rowsHtml}
+      </div>
+    </div>
+  `;
+}
+
+
 
 // Load tree view data from API
 async function loadTreeViewData() {
@@ -1139,7 +1371,7 @@ async function loadTreeViewData() {
 // Handle tree node select - show detail panel with same format as table view
 function handleTreeNodeSelect(node) {
   const { type, realId } = parseNodeId(node.id);
-  
+
   // Convert tree node to table-compatible item for detail panel
   const item = {
     displayId: realId,
@@ -1154,8 +1386,10 @@ function handleTreeNodeSelect(node) {
     hasChildren: node.children && node.children.length > 0,
     children: node.children || []
   };
-  
+
   selectedItem = item;
+  currentDetailItem = item;
+  window.currentDetailItem = item; // Make accessible globally for form view
   showDetailPanel(item);
 }
 
@@ -1188,28 +1422,28 @@ function translateStatus(status) {
 // Make item name editable inline
 function makeNameEditable(nameSpan, item) {
   const currentName = nameSpan.textContent;
-  
+
   // Create textarea
   const textarea = document.createElement('textarea');
   textarea.className = 'item-name-editable';
   textarea.style.cssText = 'background:#334155;color:#e2e8f0;font-size:13px;padding:4px 8px;border-radius:4px;border:1px solid #3b82f6;outline:none;resize:none;width:100%;min-width:150px;font-family:inherit;';
   textarea.value = currentName;
   textarea.rows = 1;
-  
+
   // Auto-resize textarea
   const autoResize = () => {
     textarea.style.height = 'auto';
     textarea.style.height = textarea.scrollHeight + 'px';
   };
-  
+
   textarea.addEventListener('input', autoResize);
-  
+
   // Replace span with textarea
   nameSpan.replaceWith(textarea);
   textarea.focus();
   textarea.select();
   autoResize();
-  
+
   // Save on blur or Enter
   const saveEdit = async () => {
     const newName = textarea.value.trim();
@@ -1217,7 +1451,7 @@ function makeNameEditable(nameSpan, item) {
       item.name = newName;
       console.log(`Updated ${item.type} #${item.realId} name to: ${newName}`);
     }
-    
+
     // Replace textarea back with span
     const newSpan = document.createElement('span');
     newSpan.style.cssText = 'color:#e2e8f0;overflow:hidden;text-overflow:ellipsis;';
@@ -1228,7 +1462,7 @@ function makeNameEditable(nameSpan, item) {
     };
     textarea.replaceWith(newSpan);
   };
-  
+
   textarea.addEventListener('blur', saveEdit);
   textarea.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1375,6 +1609,154 @@ function handleAddChild(parentItem) {
   // openTreeNodeModal(parentItem, childType.toLowerCase());
 }
 
+// Test Case Management Functions
+function addTestCase(itemId) {
+  const item = allProjectsData.find(i => i.displayId == itemId);
+  if (!item) return;
+
+  const title = prompt('Enter test case title:');
+  if (!title) return;
+
+  const description = prompt('Enter test case description (optional):');
+
+  if (!item.testData) {
+    item.testData = { testcases: [], latestResult: null };
+  }
+
+  item.testData.testcases.push({
+    title: title,
+    description: description || '',
+    lastResult: null,
+    lastTestDate: null
+  });
+
+  renderDetailTabContent(item);
+  showNotification('Success', 'Test case added', 'success');
+}
+
+function editTestCase(itemId, index) {
+  const item = allProjectsData.find(i => i.displayId == itemId);
+  if (!item || !item.testData) return;
+
+  const tc = item.testData.testcases[index];
+  const newTitle = prompt('Edit test case title:', tc.title);
+  if (newTitle) {
+    tc.title = newTitle;
+    const newDesc = prompt('Edit test case description:', tc.description);
+    tc.description = newDesc || '';
+    renderDetailTabContent(item);
+    showNotification('Success', 'Test case updated', 'success');
+  }
+}
+
+function deleteTestCase(itemId, index) {
+  const item = allProjectsData.find(i => i.displayId == itemId);
+  if (!item || !item.testData) return;
+
+  if (confirm('Delete this test case?')) {
+    item.testData.testcases.splice(index, 1);
+    renderDetailTabContent(item);
+    showNotification('Success', 'Test case deleted', 'success');
+  }
+}
+
+function startTestSession(itemId) {
+  const item = allProjectsData.find(i => i.displayId == itemId);
+  if (!item || !item.testData) return;
+
+  // Show test session modal
+  showTestSessionModal(item);
+}
+
+function showTestSessionModal(item) {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:9999;';
+
+  modal.innerHTML = `
+    <div style="background:#1e293b;border-radius:12px;max-width:600px;width:90%;max-height:90vh;overflow-y:auto;padding:24px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h3 style="color:#fff;font-size:20px;font-weight:bold;">Test Session</h3>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="color:#94a3b8;hover:color:#fff;background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
+      </div>
+
+      <div id="test-session-content" style="space-y:16px;">
+        <div style="margin-bottom:16px;">
+          <label style="display:block;color:#94a3b8;font-size:14px;margin-bottom:8px;">Result</label>
+          <select id="test-result" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#fff;">
+            <option value="passed">✅ Passed</option>
+            <option value="failed">❌ Failed</option>
+            <option value="pending">⏳ Pending</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label style="display:block;color:#94a3b8;font-size:14px;margin-bottom:8px;">Notes</label>
+          <textarea id="test-notes" rows="4" placeholder="Add notes about this test session..." style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#fff;resize:vertical;"></textarea>
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label style="display:block;color:#94a3b8;font-size:14px;margin-bottom:8px;">Screenshot (optional)</label>
+          <div style="display:flex;gap:8px;">
+            <button onclick="pasteScreenshot()" style="flex:1;padding:8px 12px;background:#475569;color:#fff;border:none;border-radius:6px;cursor:pointer;">
+              📋 Paste from Clipboard
+            </button>
+            <input type="file" id="screenshot-upload" accept="image/*" style="display:none;" onchange="handleScreenshotUpload(event)">
+            <button onclick="document.getElementById('screenshot-upload').click()" style="flex:1;padding:8px 12px;background:#475569;color:#fff;border:none;border-radius:6px;cursor:pointer;">
+              📁 Upload File
+            </button>
+          </div>
+          <div id="screenshot-preview" style="margin-top:12px;"></div>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-top:24px;">
+          <button onclick="saveTestSession('${item.displayId}')" style="flex:1;padding:12px;background:linear-gradient(to right,#3b82f6,#2563eb);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">
+            Save Test Result
+          </button>
+          <button onclick="this.closest('[style*=fixed]').remove()" style="padding:12px 24px;background:#475569;color:#fff;border:none;border-radius:8px;cursor:pointer;">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+}
+
+function saveTestSession(itemId) {
+  const item = allProjectsData.find(i => i.displayId == itemId);
+  if (!item) return;
+
+  const result = document.getElementById('test-result').value;
+  const notes = document.getElementById('test-notes').value;
+
+  if (!item.testData) {
+    item.testData = { testcases: [], latestResult: null };
+  }
+
+  item.testData.latestResult = {
+    status: result,
+    date: new Date().toLocaleString(),
+    tester: 'Current User',
+    note: notes
+  };
+
+  // Close modal
+  document.querySelector('[style*="position:fixed"]').remove();
+
+  // Refresh detail panel
+  renderDetailTabContent(item);
+  showNotification('Success', 'Test result saved', 'success');
+}
+
+// Show item detail by ID (for Gantt chart clicks)
+function showItemDetail(displayId) {
+  const item = allProjectsData.find(i => i.displayId == displayId);
+  if (item) {
+    handleTreeNodeSelect(item);
+  }
+}
+
 // Export functions
 window.initProjectsTableView = initProjectsTableView;
 window.setProjectView = setProjectView;
@@ -1389,3 +1771,11 @@ window.loadProjectsData = loadProjectsData;
 window.formatDateTime = formatDateTime;
 window.handleAddChild = handleAddChild;
 window.getChildType = getChildType;
+window.addTestCase = addTestCase;
+window.editTestCase = editTestCase;
+window.deleteTestCase = deleteTestCase;
+window.startTestSession = startTestSession;
+window.saveTestSession = saveTestSession;
+window.renderGanttChart = renderGanttChart;
+window.showItemDetail = showItemDetail;
+window.currentDetailItem = null; // Make currentDetailItem accessible globally

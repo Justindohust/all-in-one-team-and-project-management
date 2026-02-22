@@ -26,7 +26,7 @@ class DigiHubApp {
   // Initialize the application
   async init() {
     console.log('DigiHub App initializing...');
-    
+
     // Check if user is logged in
     if (api.isLoggedIn()) {
       this.state.isAuthenticated = true;
@@ -34,6 +34,14 @@ class DigiHubApp {
       await this.loadInitialData();
       this.state.isLoading = false;
       this.updateUI();
+
+      // Initialize new features
+      if (window.initGlobalSearch) {
+        window.initGlobalSearch();
+      }
+      if (window.initNotifications) {
+        window.initNotifications();
+      }
     } else {
       // Not logged in - show login modal
       this.state.isLoading = false;
