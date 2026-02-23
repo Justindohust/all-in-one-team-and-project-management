@@ -28,6 +28,11 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
           </svg>
         </button>
+        <button onclick="setProjectView('timeline')" id="view-timeline-btn" class="px-3 py-1.5 text-sm text-slate-400 hover:text-white rounded transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+        </button>
       </div>
       
       <button class="p-2 text-slate-400 hover:text-white transition-colors">
@@ -143,6 +148,21 @@
       </div>
     </div>
 
+    <!-- Timeline View Container (hidden by default) -->
+    <div id="timeline-view-container" class="hidden flex-1 bg-slate-800/50 border border-slate-700/50 rounded-l-xl overflow-hidden flex flex-col">
+      <div class="bg-slate-800/80 border-b border-slate-700 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+        <span class="text-sm font-medium text-slate-400">TIMELINE VIEW</span>
+      </div>
+      <div id="timeline-view-content" class="flex-1 overflow-auto">
+        <div class="flex items-center justify-center h-64 text-slate-400">
+          <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+            <p>Loading timeline...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Detail Panel (Initially hidden, slides in when item selected) -->
     <div id="project-detail-panel" class="hidden w-[500px] bg-slate-800/50 border-l border-slate-700/50 rounded-r-xl overflow-hidden flex flex-col shadow-2xl backdrop-blur-sm">
       <!-- Panel Header with Tabs -->
@@ -176,6 +196,9 @@
           </button>
           <button onclick="switchDetailTab('test')" class="detail-tab flex-1 px-3 py-2 text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-md transition-all duration-200" data-tab="test">
             <span id="test-status-icon" class="mr-1"></span>TEST
+          </button>
+          <button onclick="switchDetailTab('stage')" class="detail-tab flex-1 px-3 py-2 text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-md transition-all duration-200" data-tab="stage">
+            STAGE
           </button>
         </div>
       </div>

@@ -50,6 +50,8 @@ function flattenProjectsHierarchy(projectGroups) {
           priority: 'Bình thường',
           startDate: project.startDate ? formatDate(project.startDate) : null,
           finishDate: project.endDate ? formatDate(project.endDate) : null,
+          tag: project.name, // Default tag is project name
+          stage: 'BA', // Default stage
           hasChildren: project.modules && project.modules.length > 0,
           children: []
         };
@@ -70,6 +72,8 @@ function flattenProjectsHierarchy(projectGroups) {
               priority: module.priority ? capitalize(module.priority) : 'Bình thường',
               startDate: module.start_date ? formatDate(module.start_date) : null,
               finishDate: module.due_date ? formatDate(module.due_date) : null,
+              tag: module.name, // Default tag is module name
+              stage: 'Dev', // Default stage
               hasChildren: (module.submodules && module.submodules.length > 0) || (module.tasks && module.tasks.length > 0),
               children: []
             };
@@ -91,6 +95,8 @@ function flattenProjectsHierarchy(projectGroups) {
                   priority: submodule.priority ? capitalize(submodule.priority) : 'Bình thường',
                   startDate: submodule.start_date ? formatDate(submodule.start_date) : null,
                   finishDate: submodule.due_date ? formatDate(submodule.due_date) : null,
+                  tag: submodule.name, // Default tag is submodule name
+                  stage: 'Test', // Default stage
                   hasChildren: submodule.tasks && submodule.tasks.length > 0,
                   children: []
                 };
@@ -138,6 +144,8 @@ function createTaskItem(task, parentId, level, id) {
     priority: task.priority ? capitalize(task.priority) : 'Bình thường',
     startDate: task.startDate || task.created_at ? formatDate(task.startDate || task.created_at) : null,
     finishDate: task.dueDate || task.due_date ? formatDate(task.dueDate || task.due_date) : null,
+    tag: task.tag || 'Task', // Default tag
+    stage: 'UAT', // Default stage for tasks
     hasChildren: false,
     children: []
   };
@@ -437,6 +445,9 @@ function renderDetailTabContent(item) {
     case 'test':
       renderTestTab(content, item);
       break;
+    case 'stage':
+      renderStageTab(content, item);
+      break;
     case 'watch':
       renderWatchTab(content, item);
       break;
@@ -598,6 +609,32 @@ function renderOverviewTab(content, item) {
       </button>
     </div>
   `;
+}
+
+// Log activity for an item
+async function logActivity(item, description, oldValue = null, newValue = null) {
+  try {
+    const activityData = {
+      entity_type: item.type,
+      entity_id: item.realId,
+      action: description,
+      old_value: oldValue,
+      new_value: newValue,
+      created_at: new Date().toISOString()
+    };
+
+    // Send to API
+    const response = await api.request('/activities', {
+      method: 'POST',
+      body: JSON.stringify(activityData)
+    });
+
+    if (response.success) {
+      console.log('Activity logged successfully');
+    }
+  } catch (error) {
+    console.error('Error logging activity:', error);
+  }
 }
 
 // Render Activity Tab
@@ -1137,6 +1174,154 @@ async function deleteDetailItem() {
   }
 }
 
+// Render Stage Tab
+function renderStageTab(content, item) {
+  const stages = ['BA', 'Dev', 'Test', 'UAT'];
+  const currentStage = item.stage || 'BA';
+
+  content.innerHTML = `
+    <div class="space-y-4">
+      <!-- Stage Selection -->
+      <div class="bg-slate-700/30 rounded-lg p-4">
+        <label class="block text-sm font-medium text-slate-300 mb-3">Current Stage</label>
+        <div class="flex gap-2 flex-wrap">
+          ${stages.map(stage => `
+            <button onclick="updateItemStage('${stage}')"
+              class="px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                currentStage === stage
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              }">
+              ${stage}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- Tag Management -->
+      <div class="bg-slate-700/30 rounded-lg p-4">
+        <label class="block text-sm font-medium text-slate-300 mb-3">Tags</label>
+        <div class="flex gap-2 flex-wrap mb-3">
+          ${(item.tags || [item.tag || '']).filter(t => t).map(tag => `
+            <div class="bg-primary-500/20 text-primary-300 px-3 py-1 rounded-full text-sm flex items-center gap-2">
+              <span>${tag}</span>
+              <button onclick="removeItemTag('${tag}')" class="hover:text-primary-200">×</button>
+            </div>
+          `).join('')}
+        </div>
+        <div class="flex gap-2">
+          <input type="text" id="new-tag-input" placeholder="Add new tag..."
+            class="flex-1 bg-slate-700 text-white px-3 py-2 rounded border border-slate-600 focus:border-primary-500 focus:outline-none text-sm">
+          <button onclick="addItemTag()" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded font-medium transition-colors">
+            Add
+          </button>
+        </div>
+      </div>
+
+      <!-- Stage History -->
+      <div class="bg-slate-700/30 rounded-lg p-4">
+        <label class="block text-sm font-medium text-slate-300 mb-3">Stage History</label>
+        <div class="space-y-2 max-h-48 overflow-y-auto">
+          ${(item.stageHistory || []).map(entry => `
+            <div class="flex items-center justify-between text-sm bg-slate-800/50 p-2 rounded">
+              <div>
+                <span class="text-slate-300">${entry.from}</span>
+                <span class="text-slate-500 mx-2">→</span>
+                <span class="text-primary-300 font-medium">${entry.to}</span>
+              </div>
+              <span class="text-slate-500 text-xs">${formatDateTime(entry.date)}</span>
+            </div>
+          `).join('') || '<p class="text-slate-500 text-sm">No stage changes yet</p>'}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Update item stage
+function updateItemStage(newStage) {
+  if (!selectedItem) return;
+
+  const oldStage = selectedItem.stage || 'BA';
+  if (oldStage === newStage) return;
+
+  // Update stage
+  selectedItem.stage = newStage;
+
+  // Add to stage history
+  if (!selectedItem.stageHistory) {
+    selectedItem.stageHistory = [];
+  }
+  selectedItem.stageHistory.push({
+    from: oldStage,
+    to: newStage,
+    date: new Date().toISOString()
+  });
+
+  // Log activity
+  logActivity(selectedItem, `Stage changed from ${oldStage} to ${newStage}`);
+
+  // Re-render stage tab
+  const content = document.getElementById('detail-panel-content');
+  if (content) {
+    renderStageTab(content, selectedItem);
+  }
+
+  showNotification('Success', `Stage updated to ${newStage}`, 'success');
+}
+
+// Add tag to item
+function addItemTag() {
+  if (!selectedItem) return;
+
+  const input = document.getElementById('new-tag-input');
+  const newTag = input.value.trim();
+
+  if (!newTag) {
+    showNotification('Warning', 'Please enter a tag name', 'warning');
+    return;
+  }
+
+  if (!selectedItem.tags) {
+    selectedItem.tags = [];
+  }
+
+  if (selectedItem.tags.includes(newTag)) {
+    showNotification('Warning', 'Tag already exists', 'warning');
+    return;
+  }
+
+  selectedItem.tags.push(newTag);
+  input.value = '';
+
+  // Log activity
+  logActivity(selectedItem, `Tag added: ${newTag}`);
+
+  // Re-render stage tab
+  const content = document.getElementById('detail-panel-content');
+  if (content) {
+    renderStageTab(content, selectedItem);
+  }
+}
+
+// Remove tag from item
+function removeItemTag(tag) {
+  if (!selectedItem) return;
+
+  if (!selectedItem.tags) return;
+
+  selectedItem.tags = selectedItem.tags.filter(t => t !== tag);
+
+  // Log activity
+  logActivity(selectedItem, `Tag removed: ${tag}`);
+
+  // Re-render stage tab
+  const content = document.getElementById('detail-panel-content');
+  if (content) {
+    renderStageTab(content, selectedItem);
+  }
+}
+
 // View switching
 function setProjectView(viewType) {
   currentProjectView = viewType;
@@ -1154,27 +1339,39 @@ function setProjectView(viewType) {
   document.getElementById('view-gantt-btn').classList.toggle('text-white', viewType === 'gantt');
   document.getElementById('view-gantt-btn').classList.toggle('text-slate-400', viewType !== 'gantt');
 
+  document.getElementById('view-timeline-btn').classList.toggle('bg-slate-700', viewType === 'timeline');
+  document.getElementById('view-timeline-btn').classList.toggle('text-white', viewType === 'timeline');
+  document.getElementById('view-timeline-btn').classList.toggle('text-slate-400', viewType !== 'timeline');
+
   const tableContainer = document.getElementById('table-view-container');
   const treeContainer = document.getElementById('tree-view-container');
   const ganttContainer = document.getElementById('gantt-view-container');
+  const timelineContainer = document.getElementById('timeline-view-container');
 
   // Show/hide containers
   if (viewType === 'table') {
     if (tableContainer) tableContainer.classList.remove('hidden');
     if (treeContainer) treeContainer.classList.add('hidden');
     if (ganttContainer) ganttContainer.classList.add('hidden');
+    if (timelineContainer) timelineContainer.classList.add('hidden');
   } else if (viewType === 'tree') {
     if (tableContainer) tableContainer.classList.add('hidden');
     if (treeContainer) treeContainer.classList.remove('hidden');
     if (ganttContainer) ganttContainer.classList.add('hidden');
-    // Initialize tree view if not already done
+    if (timelineContainer) timelineContainer.classList.add('hidden');
     initTreeViewFromTableData();
-  }else if (viewType === 'gantt') {
+  } else if (viewType === 'gantt') {
     if (tableContainer) tableContainer.classList.add('hidden');
     if (treeContainer) treeContainer.classList.add('hidden');
     if (ganttContainer) ganttContainer.classList.remove('hidden');
-    // Render gantt chart
+    if (timelineContainer) timelineContainer.classList.add('hidden');
     renderGanttChart();
+  } else if (viewType === 'timeline') {
+    if (tableContainer) tableContainer.classList.add('hidden');
+    if (treeContainer) treeContainer.classList.add('hidden');
+    if (ganttContainer) ganttContainer.classList.add('hidden');
+    if (timelineContainer) timelineContainer.classList.remove('hidden');
+    renderTimelineView();
   }
 }
 
@@ -1847,6 +2044,111 @@ function showItemDetail(displayId) {
   }
 }
 
+// Render Timeline View - Group items by stage and tag
+function renderTimelineView() {
+  const container = document.getElementById('timeline-view-content');
+  if (!container) return;
+
+  // Group items by stage
+  const stages = ['BA', 'Dev', 'Test', 'UAT'];
+  const itemsByStage = {};
+
+  stages.forEach(stage => {
+    itemsByStage[stage] = allProjectsData.filter(item => item.stage === stage && item.startDate);
+  });
+
+  // Get unique tags
+  const allTags = new Set();
+  allProjectsData.forEach(item => {
+    if (item.tag) allTags.add(item.tag);
+    if (item.tags) item.tags.forEach(tag => allTags.add(tag));
+  });
+
+  // Calculate date range
+  let minDate = new Date();
+  let maxDate = new Date();
+
+  allProjectsData.forEach(item => {
+    if (item.startDate) {
+      const date = new Date(item.startDate);
+      if (date < minDate) minDate = date;
+      if (date > maxDate) maxDate = date;
+    }
+  });
+
+  // Generate month headers
+  const months = [];
+  const current = new Date(minDate);
+  while (current <= maxDate) {
+    months.push({
+      name: current.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      start: new Date(current),
+      days: new Date(current.getFullYear(), current.getMonth() + 1, 0).getDate()
+    });
+    current.setMonth(current.getMonth() + 1);
+  }
+
+  // Build timeline HTML
+  let html = `
+    <div class="timeline-container p-4 overflow-x-auto">
+      <div class="flex gap-8">
+  `;
+
+  // For each stage, create a column
+  stages.forEach(stage => {
+    const items = itemsByStage[stage];
+    html += `
+      <div class="stage-column flex-shrink-0 w-80">
+        <div class="bg-slate-700/50 rounded-lg p-4 mb-4 border-l-4 border-primary-500">
+          <h3 class="font-bold text-white mb-2">${stage}</h3>
+          <p class="text-sm text-slate-400">${items.length} items</p>
+        </div>
+        <div class="space-y-3">
+    `;
+
+    items.forEach(item => {
+      const startDate = new Date(item.startDate);
+      const endDate = item.finishDate ? new Date(item.finishDate) : new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const daysLeft = Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24));
+      const statusColor = daysLeft < 0 ? 'bg-red-500/20 border-red-500' : daysLeft < 7 ? 'bg-yellow-500/20 border-yellow-500' : 'bg-green-500/20 border-green-500';
+
+      html += `
+        <div onclick="handleTreeNodeSelect(allProjectsData.find(i => i.displayId === ${item.displayId}))"
+          class="timeline-item p-3 rounded-lg border-l-4 ${statusColor}cursor-pointer hover:bg-slate-700/50 transition-colors">
+          <div class="flex items-start justify-between mb-2">
+            <h4 class="font-medium text-white text-sm flex-1">${item.name}</h4>
+            <span class="text-xs px-2 py-1 rounded bg-slate-700 text-slate-300">${item.type}</span>
+          </div>
+          <div class="text-xs text-slate-400 space-y-1">
+            <div>📅 ${formatDate(item.startDate)}</div>
+            ${item.finishDate ? `<div>⏱️ ${formatDate(item.finishDate)}</div>` : ''}
+            ${item.assignee ? `<div>👤 ${item.assignee}</div>` : ''}
+            ${item.tag ? `<div class="flex flex-wrap gap-1"><span class="bg-primary-500/30 text-primary-300 px-2 py-0.5 rounded text-xs">${item.tag}</span></div>` : ''}
+          </div>
+          <div class="mt-2 flex items-center gap-2">
+            <div class="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+              <div class="h-full bg-primary-500" style="width: ${Math.max(0, Math.min(100, 100 - (daysLeft / 30 * 100)))}%"></div>
+            </div>
+            <span class="text-xs text-slate-400">${daysLeft}d</span>
+          </div>
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
+      </div>
+    `;
+  });
+
+  html += `
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
 // Export functions
 window.initProjectsTableView = initProjectsTableView;
 window.setProjectView = setProjectView;
@@ -1867,5 +2169,10 @@ window.deleteTestCase = deleteTestCase;
 window.startTestSession = startTestSession;
 window.saveTestSession = saveTestSession;
 window.renderGanttChart = renderGanttChart;
+window.renderTimelineView = renderTimelineView;
+window.updateItemStage = updateItemStage;
+window.addItemTag = addItemTag;
+window.removeItemTag = removeItemTag;
+window.logActivity = logActivity;
 window.showItemDetail = showItemDetail;
 window.currentDetailItem = null; // Make currentDetailItem accessible globally
