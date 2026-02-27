@@ -216,7 +216,8 @@ function navigateTo(pageId) {
     team: 'Team',
     messages: 'Messages',
     reports: 'Reports',
-    settings: 'Settings'
+    settings: 'Settings',
+    meetings: 'Meetings'
   };
   
   const titleElement = document.getElementById('page-title');

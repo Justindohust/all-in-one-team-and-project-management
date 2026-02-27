@@ -616,6 +616,73 @@ class DigiHubAPI {
       method: 'DELETE'
     });
   }
+
+  // ==================
+  // MEETINGS
+  // ==================
+  async getMeetings(filters = {}) {
+    const params = new URLSearchParams(filters);
+    return this.request(`/meetings?${params}`);
+  }
+
+  async getMeeting(id) {
+    return this.request(`/meetings/${id}`);
+  }
+
+  async createMeeting(data) {
+    return this.request('/meetings', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...data,
+        createdBy: this.currentUser?.id
+      })
+    });
+  }
+
+  async updateMeeting(id, data) {
+    return this.request(`/meetings/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async deleteMeeting(id) {
+    return this.request(`/meetings/${id}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async sendMeetingMinutes(meetingId) {
+    return this.request(`/meetings/${meetingId}/minutes/send`, {
+      method: 'POST'
+    });
+  }
+
+  // ==================
+  // MEETING SERIES (Recurring)
+  // ==================
+  async getMeetingSeries(filters = {}) {
+    const params = new URLSearchParams(filters);
+    return this.request(`/meetings/series?${params}`);
+  }
+
+  async getMeetingSeriesOccurrences(seriesId, startDate, endDate) {
+    const params = new URLSearchParams({ startDate, endDate });
+    return this.request(`/meetings/series/${seriesId}/occurrences?${params}`);
+  }
+
+  async updateMeetingSeries(id, data) {
+    return this.request(`/meetings/series/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async deleteMeetingSeries(id) {
+    return this.request(`/meetings/series/${id}`, {
+      method: 'DELETE'
+    });
+  }
 }
 
 // Create global API instance

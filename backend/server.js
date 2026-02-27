@@ -31,6 +31,7 @@ app.use('/api/modules', require('./routes/modules'));
 app.use('/api/submodules', require('./routes/submodules'));
 app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/calendar', require('./routes/calendar'));
+app.use('/api/meetings', require('./routes/meetings'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/team', require('./routes/team'));
 app.use('/api/reports', require('./routes/reports'));

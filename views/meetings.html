@@ -1,0 +1,380 @@
+<!-- Meetings Page -->
+<div id="meetings-page" class="page hidden">
+  <div class="flex flex-col lg:flex-row gap-6">
+    <!-- Main Content -->
+    <div class="flex-1">
+      <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl">
+        <!-- Header -->
+        <div class="p-6 border-b border-slate-700/50">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-semibold text-white">My meetings</h2>
+            
+            <!-- Meeting Dropdown -->
+            <div class="relative">
+              <button id="meeting-dropdown-btn" onclick="toggleMeetingDropdown()" class="flex items-center gap-2 px-4 py-2 bg-success hover:bg-green-600 text-white font-medium rounded-lg transition-colors shadow-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Meeting
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+              <!-- Dropdown Menu -->
+              <div id="meeting-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-slate-800/95 backdrop-blur-sm border border-slate-700 rounded-xl shadow-2xl z-[9999] overflow-hidden">
+                <button type="button" id="btn-one-time-meeting" onclick="closeMeetingDropdown(); window.openOneTimeMeetingModal();" class="w-full p-4 text-left hover:bg-slate-700/50 border-b border-slate-700/50">
+                  <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 bg-primary-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <svg class="w-5 h-5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 class="font-semibold text-white">One-time</h4>
+                      <p class="text-sm text-slate-400 mt-1">Organize your meeting as a dynamic list of agenda items, optionally linking them to a work package.</p>
+                    </div>
+                  </div>
+                </button>
+                <button type="button" id="btn-recurring-meeting" onclick="closeMeetingDropdown(); window.openRecurringMeetingModal();" class="w-full p-4 text-left hover:bg-slate-700/50">
+                  <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 class="font-semibold text-white">Recurring</h4>
+                      <p class="text-sm text-slate-400 mt-1">Create meeting series with a dynamic template for each occurrence.</p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Tabs -->
+          <div class="flex items-center gap-1">
+            <button onclick="switchMeetingTab('filters')" id="meeting-tab-filters" class="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white rounded-lg transition-colors">
+              Filters
+            </button>
+            <button onclick="switchMeetingTab('upcoming')" id="meeting-tab-upcoming" class="px-4 py-2 text-sm font-medium text-white bg-slate-700 rounded-lg relative">
+              Upcoming
+              <span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary-500 rounded-full"></span>
+            </button>
+            <button onclick="switchMeetingTab('past')" id="meeting-tab-past" class="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white rounded-lg transition-colors">
+              Past
+            </button>
+          </div>
+        </div>
+        
+        <!-- Filters Panel (Hidden by default, shown when Filters tab is active) -->
+        <div id="meeting-filters-panel" class="hidden p-4 border-b border-slate-700/50 bg-slate-900/30">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Search</label>
+              <input type="text" id="meeting-search" placeholder="Search meetings..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Date Range</label>
+              <select id="meeting-date-filter" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Organizer</label>
+              <select id="meeting-organizer-filter" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <option value="">All Organizers</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Status</label>
+              <select id="meeting-status-filter" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <option value="">All Status</option>
+                <option value="scheduled">Scheduled</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Meeting List -->
+        <div class="p-6">
+          <!-- Table Header -->
+          <div class="grid grid-cols-4 gap-4 pb-3 border-b border-slate-700/50 text-xs font-medium text-slate-400 uppercase tracking-wider">
+            <div>Title</div>
+            <div>Date and time</div>
+            <div>Duration</div>
+            <div>Location</div>
+          </div>
+          
+          <!-- Meeting Items -->
+          <div id="meetings-list" class="divide-y divide-slate-700/30">
+            <!-- Empty State -->
+            <div id="meetings-empty" class="py-16 text-center">
+              <svg class="w-16 h-16 mx-auto text-slate-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              <p class="text-white font-medium mb-1">No meetings to display</p>
+              <p class="text-sm text-slate-400">There are no meetings that meet the active filter criteria.</p>
+            </div>
+            
+            <!-- Meeting Item Template (will be populated dynamically) -->
+            <!--
+            <div class="grid grid-cols-4 gap-4 py-4 items-center hover:bg-slate-700/20 cursor-pointer" onclick="openMeetingDetail('meeting-id')">
+              <div>
+                <h4 class="font-medium text-white">Weekly Team Standup</h4>
+                <p class="text-xs text-slate-400">Recurring • Weekly</p>
+              </div>
+              <div>
+                <p class="text-white">Mon, Jan 27, 2026</p>
+                <p class="text-xs text-slate-400">9:00 AM - 9:30 AM</p>
+              </div>
+              <div class="text-slate-300">30 min</div>
+              <div class="text-slate-300">Google Meet</div>
+            </div>
+            -->
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Right Sidebar - Quick Stats -->
+    <div class="w-full lg:w-72">
+      <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 mb-4">
+        <h3 class="font-semibold text-white mb-4">Quick Stats</h3>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-primary-500/20 rounded-lg flex items-center justify-center">
+                <svg class="w-4 h-4 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+              </div>
+              <span class="text-sm text-slate-300">This Week</span>
+            </div>
+            <span id="meeting-count-week" class="text-lg font-semibold text-white">0</span>
+          </div>
+          <div class="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-warning/20 rounded-lg flex items-center justify-center">
+                <svg class="w-4 h-4 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <span class="text-sm text-slate-300">Hours this month</span>
+            </div>
+            <span id="meeting-hours-month" class="text-lg font-semibold text-white">0</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Upcoming Meetings Widget -->
+      <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+        <h3 class="font-semibold text-white mb-4">Next Meeting</h3>
+        <div id="next-meeting-widget">
+          <div class="text-center py-4">
+            <p class="text-sm text-slate-400">No upcoming meetings</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Meeting Detail Modal -->
+<div id="meeting-detail-modal" class="fixed inset-0 z-50 hidden">
+  <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeMeetingDetailModal()"></div>
+  <div class="fixed inset-0 overflow-y-auto">
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-2xl max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between p-6 border-b border-slate-700/50">
+          <div>
+            <h3 id="meeting-detail-title" class="text-xl font-semibold text-white">Meeting Title</h3>
+            <p id="meeting-detail-subtitle" class="text-sm text-slate-400 mt-1">Recurring • Weekly</p>
+          </div>
+          <button onclick="closeMeetingDetailModal()" class="text-slate-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="p-6 overflow-y-auto max-h-[60vh]">
+          <!-- Meeting Info -->
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Date & Time</label>
+              <p id="meeting-detail-datetime" class="text-white">-</p>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Duration</label>
+              <p id="meeting-detail-duration" class="text-white">-</p>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Location</label>
+              <p id="meeting-detail-location" class="text-white">-</p>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Status</label>
+              <span id="meeting-detail-status" class="px-2 py-1 text-xs font-medium rounded-full bg-primary-500/20 text-primary-400">Scheduled</span>
+            </div>
+          </div>
+          
+          <!-- Participants Section -->
+          <div class="mb-6">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="font-medium text-white">Participants</h4>
+              <button onclick="editMeetingParticipants()" class="text-xs text-primary-400 hover:text-primary-300">Edit</button>
+            </div>
+            <div id="meeting-detail-participants" class="flex flex-wrap gap-2">
+              <!-- Will be populated dynamically -->
+            </div>
+          </div>
+          
+          <!-- Notify Section -->
+          <div class="mb-6">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="font-medium text-white">Send minutes to</h4>
+              <button onclick="editMeetingNotifiees()" class="text-xs text-primary-400 hover:text-primary-300">Edit</button>
+            </div>
+            <div id="meeting-detail-notifiees" class="flex flex-wrap gap-2">
+              <!-- Will be populated dynamically -->
+            </div>
+          </div>
+          
+          <!-- Meeting Minutes Section -->
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="font-medium text-white">Meeting Minutes</h4>
+              <div class="flex gap-2">
+                <button onclick="sendMeetingMinutes()" class="text-xs px-2 py-1 bg-primary-500/20 text-primary-400 rounded hover:bg-primary-500/30">
+                  Send Minutes
+                </button>
+              </div>
+            </div>
+            <div id="meeting-detail-minutes" class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 min-h-[150px]">
+              <p class="text-sm text-slate-400 italic">No meeting minutes yet. Click to add...</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Modal Footer -->
+        <div class="flex items-center justify-between p-6 border-t border-slate-700/50 bg-slate-900/30">
+          <button onclick="deleteMeeting()" class="px-4 py-2 text-danger hover:bg-danger/10 rounded-lg transition-colors">
+            Delete Meeting
+          </button>
+          <div class="flex items-center gap-3">
+            <button onclick="closeMeetingDetailModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg">
+              Close
+            </button>
+            <button onclick="saveMeetingDetails()" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg">
+              Save Changes
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Participants Modal -->
+<div id="edit-participants-modal" class="fixed inset-0 z-[60] hidden">
+  <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeEditParticipantsModal()"></div>
+  <div class="fixed inset-0 overflow-y-auto">
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-md p-6" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-semibold text-white">Edit Participants</h3>
+          <button onclick="closeEditParticipantsModal()" class="text-slate-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="space-y-3 max-h-[300px] overflow-y-auto" id="participants-list-edit">
+          <!-- Will be populated dynamically with checkboxes -->
+        </div>
+        
+        <div class="flex items-center gap-3 mt-6">
+          <button onclick="closeEditParticipantsModal()" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg">
+            Cancel
+          </button>
+          <button onclick="saveParticipants()" class="flex-1 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg">
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Notifiees Modal -->
+<div id="edit-notifiees-modal" class="fixed inset-0 z-[60] hidden">
+  <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeEditNotifieesModal()"></div>
+  <div class="fixed inset-0 overflow-y-auto">
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-md p-6" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-semibold text-white">Edit Notifiees</h3>
+          <button onclick="closeEditNotifieesModal()" class="text-slate-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="space-y-3 max-h-[300px] overflow-y-auto" id="notifiees-list-edit">
+          <!-- Will be populated dynamically with checkboxes -->
+        </div>
+        
+        <div class="flex items-center gap-3 mt-6">
+          <button onclick="closeEditNotifieesModal()" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg">
+            Cancel
+          </button>
+          <button onclick="saveNotifiees()" class="flex-1 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg">
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Minutes Editor Modal -->
+<div id="minutes-editor-modal" class="fixed inset-0 z-[60] hidden">
+  <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeMinutesEditorModal()"></div>
+  <div class="fixed inset-0 overflow-y-auto">
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-2xl p-6" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-semibold text-white">Edit Meeting Minutes</h3>
+          <button onclick="closeMinutesEditorModal()" class="text-slate-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        
+        <textarea id="meeting-minutes-editor" rows="15" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none font-mono text-sm" placeholder="Enter meeting minutes here..."></textarea>
+        
+        <div class="flex items-center gap-3 mt-6">
+          <button onclick="closeMinutesEditorModal()" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg">
+            Cancel
+          </button>
+          <button onclick="saveMeetingMinutes()" class="flex-1 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg">
+            Save Minutes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

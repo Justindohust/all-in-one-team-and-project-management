@@ -421,7 +421,7 @@
             Are you sure you want to delete this item?
           </p>
         </div>
-        
+
         <div class="flex items-center gap-3">
           <button onclick="confirmDelete()" class="flex-1 px-4 py-2 bg-danger hover:bg-red-600 text-white font-medium rounded-lg">
             Delete
@@ -430,6 +430,203 @@
             Cancel
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Meeting Creation Modals -->
+<!-- One-time Meeting Modal -->
+<div id="one-time-meeting-modal" class="fixed inset-0 z-50 hidden">
+  <div class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm" onclick="closeOneTimeMeetingModal()"></div>
+  <div class="fixed inset-0 overflow-y-auto">
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-lg">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-4 border-b border-slate-700">
+          <h3 class="text-lg font-semibold text-white">New one-time meeting</h3>
+          <button onclick="closeOneTimeMeetingModal()" class="w-8 h-8 bg-primary-500 hover:bg-primary-600 rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <form id="one-time-meeting-form" onsubmit="createOneTimeMeeting(event)" class="p-6 space-y-5">
+          <!-- Title -->
+          <div>
+            <label class="block text-sm font-medium text-white mb-2">Title *</label>
+            <input type="text" id="one-time-meeting-title" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Title">
+          </div>
+
+          <!-- Location -->
+          <div>
+            <label class="block text-sm font-medium text-white mb-2">Location</label>
+            <input type="text" id="one-time-meeting-location" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Location">
+          </div>
+
+          <!-- Date & Time -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-white mb-2">Date *</label>
+              <div class="relative">
+                <input type="date" id="one-time-meeting-date" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                </button>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">+07</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-white mb-2">Start time *</label>
+              <div class="relative">
+                <input type="time" id="one-time-meeting-time" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Duration -->
+          <div>
+            <label class="block text-sm font-medium text-white mb-2">Duration *</label>
+            <div class="flex items-center gap-2">
+              <input type="number" id="one-time-meeting-duration" min="0.5" step="0.5" value="1" required class="w-20 px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+              <span class="text-sm text-slate-400">hours</span>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div>
+            <label class="block text-sm font-medium text-white mb-2">Description</label>
+            <textarea id="one-time-meeting-description" rows="3" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Description"></textarea>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center justify-end gap-3 pt-4">
+            <button type="button" onclick="closeOneTimeMeetingModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg">
+              Cancel
+            </button>
+            <button type="submit" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg">
+              Create
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recurring Meeting Modal -->
+<div id="recurring-meeting-modal" class="fixed inset-0 z-50 hidden">
+  <div class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm" onclick="closeRecurringMeetingModal()"></div>
+  <div class="fixed inset-0 overflow-y-auto">
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-lg">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-4 border-b border-slate-700">
+          <h3 class="text-lg font-semibold text-white">New recurring meeting</h3>
+          <button onclick="closeRecurringMeetingModal()" class="w-8 h-8 bg-primary-500 hover:bg-primary-600 rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <form id="recurring-meeting-form" onsubmit="createRecurringMeeting(event)" class="p-6 space-y-5">
+          <!-- Title -->
+          <div>
+            <label class="block text-sm font-medium text-white mb-2">Title *</label>
+            <input type="text" id="recurring-meeting-title" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Title">
+          </div>
+
+          <!-- Location -->
+          <div>
+            <label class="block text-sm font-medium text-white mb-2">Location</label>
+            <input type="text" id="recurring-meeting-location" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Location">
+          </div>
+
+          <!-- Starts on & Start time -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-white mb-2">Starts on *</label>
+              <div class="relative">
+                <input type="date" id="recurring-meeting-start-date" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                </button>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">+07</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-white mb-2">Start time *</label>
+              <div class="relative">
+                <input type="time" id="recurring-meeting-time" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Duration -->
+          <div>
+            <label class="block text-sm font-medium text-white mb-2">Duration *</label>
+            <div class="flex items-center gap-2">
+              <input type="number" id="recurring-meeting-duration" min="0.5" step="0.5" value="1" required class="w-20 px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+              <span class="text-sm text-slate-400">hours</span>
+            </div>
+          </div>
+
+          <!-- Frequency & Interval -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-white mb-2">Frequency *</label>
+              <select id="recurring-meeting-pattern" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <option value="daily">Every day</option>
+                <option value="weekly" selected>Every week</option>
+                <option value="biweekly">Every 2 weeks</option>
+                <option value="monthly">Every month</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-white mb-2">Ends on</label>
+              <div class="relative">
+                <input type="date" id="recurring-meeting-end-date" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div>
+            <label class="block text-sm font-medium text-white mb-2">Description</label>
+            <textarea id="recurring-meeting-description" rows="3" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Description"></textarea>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center justify-end gap-3 pt-4">
+            <button type="button" onclick="closeRecurringMeetingModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg">
+              Cancel
+            </button>
+            <button type="submit" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg">
+              Create
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

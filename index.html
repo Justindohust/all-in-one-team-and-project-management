@@ -56,6 +56,12 @@
           </svg>
           Calendar
         </a>
+        <a href="#meetings" data-page="meetings" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium cursor-pointer" onclick="navigateTo('meetings')">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+          </svg>
+          Meetings
+        </a>
         <a href="#team" data-page="team" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium cursor-pointer" onclick="navigateTo('team')">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
@@ -201,7 +207,221 @@
 
   <!-- Modals Container -->
   <div id="modals-container">
-    <!-- Modals will be loaded here dynamically -->
+    <!-- Meeting Creation Modals -->
+    <!-- One-time Meeting Modal -->
+    <div id="one-time-meeting-modal" class="fixed inset-0 z-50 hidden">
+      <div class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm" onclick="closeOneTimeMeetingModal()"></div>
+      <div class="fixed inset-0 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+          <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-lg">
+            <div class="flex items-center justify-between p-4 border-b border-slate-700">
+              <h3 class="text-lg font-semibold text-white">New one-time meeting</h3>
+              <button onclick="closeOneTimeMeetingModal()" class="w-8 h-8 bg-primary-500 hover:bg-primary-600 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <form id="one-time-meeting-form" onsubmit="createOneTimeMeeting(event)" class="p-6 space-y-5">
+              <div>
+                <label class="block text-sm font-medium text-white mb-2">Title *</label>
+                <input type="text" id="one-time-meeting-title" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Title">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-white mb-2">Location</label>
+                <input type="text" id="one-time-meeting-location" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Location">
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-white mb-2">Date *</label>
+                  <input type="date" id="one-time-meeting-date" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-white mb-2">Start time *</label>
+                  <input type="time" id="one-time-meeting-time" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-white mb-2">Duration *</label>
+                <div class="flex items-center gap-2">
+                  <input type="number" id="one-time-meeting-duration" min="0.5" step="0.5" value="1" required class="w-20 px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+                  <span class="text-sm text-slate-400">hours</span>
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-white mb-2">Description</label>
+                <textarea id="one-time-meeting-description" rows="3" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Description"></textarea>
+              </div>
+              <div class="flex items-center justify-end gap-3 pt-4">
+                <button type="button" onclick="closeOneTimeMeetingModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg">Create</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recurring Meeting Modal -->
+    <div id="recurring-meeting-modal" class="fixed inset-0 z-50 hidden">
+      <div class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm" onclick="closeRecurringMeetingModal()"></div>
+      <div class="fixed inset-0 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+          <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-lg">
+            <div class="flex items-center justify-between p-4 border-b border-slate-700">
+              <h3 class="text-lg font-semibold text-white">New recurring meeting</h3>
+              <button onclick="closeRecurringMeetingModal()" class="w-8 h-8 bg-primary-500 hover:bg-primary-600 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <form id="recurring-meeting-form" onsubmit="createRecurringMeeting(event)" class="p-6 space-y-5">
+              <div>
+                <label class="block text-sm font-medium text-white mb-2">Title *</label>
+                <input type="text" id="recurring-meeting-title" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Title">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-white mb-2">Location</label>
+                <input type="text" id="recurring-meeting-location" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Location">
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-white mb-2">Starts on *</label>
+                  <input type="date" id="recurring-meeting-start-date" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-white mb-2">Start time *</label>
+                  <input type="time" id="recurring-meeting-time" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-white mb-2">Duration *</label>
+                  <div class="flex items-center gap-2">
+                    <input type="number" id="recurring-meeting-duration" min="0.5" step="0.5" value="1" required class="w-20 px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    <span class="text-sm text-slate-400">hours</span>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-white mb-2">Frequency *</label>
+                  <select id="recurring-meeting-pattern" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    <option value="daily">Daily</option>
+                    <option value="weekly" selected>Weekly</option>
+                    <option value="bi-weekly">Bi-weekly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-white mb-2">Ends on</label>
+                <input type="date" id="recurring-meeting-end-date" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-white mb-2">Description</label>
+                <textarea id="recurring-meeting-description" rows="3" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Description"></textarea>
+              </div>
+              <div class="flex items-center justify-end gap-3 pt-4">
+                <button type="button" onclick="closeRecurringMeetingModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg">Create</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Meeting Detail Modal -->
+  <div id="meeting-detail-modal" class="fixed inset-0 z-50 hidden">
+    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeMeetingDetailModal()"></div>
+    <div class="fixed inset-0 overflow-y-auto">
+      <div class="flex min-h-full items-center justify-center p-4">
+        <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-2xl max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
+          <div class="flex items-center justify-between p-6 border-b border-slate-700/50">
+            <div>
+              <h3 id="meeting-detail-title" class="text-xl font-semibold text-white">Meeting Title</h3>
+              <p id="meeting-detail-subtitle" class="text-sm text-slate-400 mt-1">Recurring • Weekly</p>
+            </div>
+            <button onclick="closeMeetingDetailModal()" class="text-slate-400 hover:text-white">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <div class="p-6 overflow-y-auto max-h-[60vh]">
+            <div class="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Date & Time</label>
+                <p id="meeting-detail-datetime" class="text-white">-</p>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Duration</label>
+                <p id="meeting-detail-duration" class="text-white">-</p>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Location</label>
+                <p id="meeting-detail-location" class="text-white">-</p>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Status</label>
+                <span id="meeting-detail-status" class="px-2 py-1 text-xs font-medium rounded-full bg-primary-500/20 text-primary-400">Scheduled</span>
+              </div>
+            </div>
+            <div class="mb-6">
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="font-medium text-white">Participants</h4>
+                <button onclick="editMeetingParticipants()" class="text-xs text-primary-400 hover:text-primary-300">Edit</button>
+              </div>
+              <div id="meeting-detail-participants" class="flex flex-wrap gap-2"></div>
+            </div>
+            <div class="mb-6">
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="font-medium text-white">Send minutes to</h4>
+                <button onclick="editMeetingNotifiees()" class="text-xs text-primary-400 hover:text-primary-300">Edit</button>
+              </div>
+              <div id="meeting-detail-notifiees" class="flex flex-wrap gap-2"></div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="font-medium text-white">Meeting Minutes</h4>
+              </div>
+              <div id="meeting-detail-minutes" class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 min-h-[150px]">
+                <p class="text-sm text-slate-400 italic">No meeting minutes yet. Click to add...</p>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between p-6 border-t border-slate-700/50 bg-slate-900/30">
+            <button onclick="deleteMeeting()" class="px-4 py-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">Delete Meeting</button>
+            <button onclick="closeMeetingDetailModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Minutes Editor Modal -->
+  <div id="minutes-editor-modal" class="fixed inset-0 z-[60] hidden">
+    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeMinutesEditorModal()"></div>
+    <div class="fixed inset-0 overflow-y-auto">
+      <div class="flex min-h-full items-center justify-center p-4">
+        <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-2xl p-6" onclick="event.stopPropagation()">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-semibold text-white">Edit Meeting Minutes</h3>
+            <button onclick="closeMinutesEditorModal()" class="text-slate-400 hover:text-white">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <textarea id="meeting-minutes-editor" rows="15" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none font-mono text-sm" placeholder="Enter meeting minutes here..."></textarea>
+          <div class="flex items-center gap-3 mt-6">
+            <button onclick="closeMinutesEditorModal()" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg">Cancel</button>
+            <button onclick="saveMeetingMinutes()" class="flex-1 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg">Save Minutes</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- JavaScript Files -->
@@ -216,6 +436,7 @@
   <script src="js/tree-view.js"></script>
   <script src="js/projects.js"></script>
   <script src="js/projects-table-view.js"></script>
+  <script src="js/meetings.js"></script>
   
   <!-- TreeView Component -->
   <script>
@@ -379,6 +600,7 @@
       viewLoader.onViewLoad('projects', initProjects);
       viewLoader.onViewLoad('tasks', initTasks);
       viewLoader.onViewLoad('calendar', initCalendar);
+      viewLoader.onViewLoad('meetings', initMeetings);
       viewLoader.onViewLoad('team', initTeam);
       viewLoader.onViewLoad('messages', initMessages);
       viewLoader.onViewLoad('reports', initReports);
@@ -472,6 +694,11 @@
       initCalendarView();
     }
 
+    function initMeetings() {
+      console.log('Meetings initialized');
+      meetingsManager.init();
+    }
+
     function initTeam() {
       console.log('Team initialized');
       loadTeamMembers();
@@ -549,19 +776,144 @@
       // Initialize calendar
       const grid = document.getElementById('calendar-grid');
       if (!grid) return;
-      
+
       // Generate calendar days
       const today = new Date();
       const year = today.getFullYear();
       const month = today.getMonth();
-      
+
       // Update month title
       const monthTitle = document.getElementById('calendar-month-title');
       if (monthTitle) {
-        const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+        const months = ['January', 'February', 'March', 'April', 'May', 'June',
                        'July', 'August', 'September', 'October', 'November', 'December'];
         monthTitle.textContent = `${months[month]} ${year}`;
       }
+
+      // Load calendar events and meetings
+      loadCalendarWithMeetings(year, month);
+    }
+
+    // Load calendar with events and meetings
+    async function loadCalendarWithMeetings(year, month) {
+      const grid = document.getElementById('calendar-grid');
+      if (!grid) return;
+
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startDay = firstDay.getDay();
+      const daysInMonth = lastDay.getDate();
+
+      let calendarEvents = [];
+      let calendarMeetings = [];
+
+      try {
+        // Load events from API
+        const startDate = new Date(year, month, 1).toISOString();
+        const endDate = new Date(year, month + 1, 0).toISOString();
+
+        const [eventsResult, meetingsResult] = await Promise.all([
+          api.getCalendarEvents(startDate, endDate).catch(() => ({ success: false, data: [] })),
+          api.getMeetings().catch(() => ({ success: false, data: [] }))
+        ]);
+
+        if (eventsResult.success) {
+          calendarEvents = eventsResult.data?.events || [];
+        }
+
+        if (meetingsResult.success) {
+          calendarMeetings = meetingsResult.data.filter(m => {
+            const mDate = new Date(m.startTime);
+            return mDate.getMonth() === month && mDate.getFullYear() === year;
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load calendar data:', error);
+      }
+
+      // Generate calendar HTML
+      let html = '';
+
+      // Empty cells for days before month starts
+      for (let i = 0; i < startDay; i++) {
+        html += `<div class="min-h-[100px] p-2 bg-slate-900/30 border border-slate-700/30"></div>`;
+      }
+
+      // Days of month
+      for (let day = 1; day <= daysInMonth; day++) {
+        const currentDate = new Date(year, month, day);
+        const dateStr = currentDate.toISOString().split('T')[0];
+
+        // Find events and meetings for this day
+        const dayEvents = calendarEvents.filter(e => {
+          const eDate = new Date(e.startTime).toISOString().split('T')[0];
+          return eDate === dateStr;
+        });
+
+        const dayMeetings = calendarMeetings.filter(m => {
+          const mDate = new Date(m.startTime).toISOString().split('T')[0];
+          return mDate === dateStr;
+        });
+
+        const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
+
+        html += `
+          <div class="min-h-[100px] p-2 bg-slate-900/50 border border-slate-700/30 ${isToday ? 'ring-2 ring-primary-500' : ''}">
+            <div class="text-sm ${isToday ? 'text-primary-400 font-bold' : 'text-slate-400'}">${day}</div>
+            <div class="mt-1 space-y-1">
+              ${dayMeetings.slice(0, 2).map(m => `
+                <div class="text-xs px-1.5 py-0.5 bg-primary-500/20 text-primary-400 rounded truncate cursor-pointer"
+                     onclick="navigateTo('meetings')" title="${m.title}">
+                  ${m.title}
+                </div>
+              `).join('')}
+              ${dayMeetings.length > 2 ? `<div class="text-xs text-slate-500">+${dayMeetings.length - 2} more</div>` : ''}
+              ${dayEvents.slice(0, 1).map(e => `
+                <div class="text-xs px-1.5 py-0.5 bg-slate-700 text-slate-300 rounded truncate" title="${e.title}">
+                  ${e.title}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      grid.innerHTML = html;
+
+      // Update upcoming sidebar
+      updateUpcomingSidebar(calendarEvents, calendarMeetings);
+    }
+
+    // Update upcoming events sidebar with meetings
+    function updateUpcomingSidebar(events, meetings) {
+      const container = document.getElementById('upcoming-events');
+      if (!container) return;
+
+      const now = new Date();
+
+      // Combine and sort events and meetings
+      const allItems = [
+        ...meetings.map(m => ({ ...m, type: 'meeting', date: new Date(m.startTime) })),
+        ...events.map(e => ({ ...e, type: 'event', date: new Date(e.startTime) }))
+      ].filter(item => item.date >= now).sort((a, b) => a.date - b.date).slice(0, 5);
+
+      if (allItems.length === 0) {
+        container.innerHTML = '<p class="text-sm text-slate-400">No upcoming events</p>';
+        return;
+      }
+
+      container.innerHTML = allItems.map(item => {
+        const borderColor = item.type === 'meeting' ? 'border-primary-500' : 'border-slate-600';
+        const dateStr = item.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+        return `
+          <div class="p-3 bg-slate-900/50 border-l-4 ${borderColor} rounded-r-lg cursor-pointer hover:bg-slate-800/50"
+               onclick="${item.type === 'meeting' ? `meetingsManager.openMeetingDetail('${item.id}')` : ''}">
+            <p class="text-sm font-medium text-white">${item.title}</p>
+            <p class="text-xs text-slate-400 mt-1">${dateStr}${item.type === 'meeting' ? ' • Meeting' : ''}</p>
+          </div>
+        `;
+      }).join('');
     }
 
     function loadTeamMembers() {
@@ -593,13 +945,13 @@
         currentMonth = 11;
         currentYear--;
       }
-      initCalendarView();
+      loadCalendarWithMeetings(currentYear, currentMonth);
     }
 
     function goToToday() {
       currentMonth = new Date().getMonth();
       currentYear = new Date().getFullYear();
-      initCalendarView();
+      loadCalendarWithMeetings(currentYear, currentMonth);
     }
 
     // Form handlers

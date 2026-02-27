@@ -13,6 +13,7 @@ class DigiHubApp {
       projects: [],
       tasks: [],
       teamMembers: [],
+      meetings: [],
       channels: [],
       currentChannel: null,
       messages: [],
@@ -63,10 +64,11 @@ class DigiHubApp {
   async loadInitialData() {
     try {
       // Load data in parallel
-      const [projectGroupsResult, dashboardResult, teamResult] = await Promise.all([
+      const [projectGroupsResult, dashboardResult, teamResult, meetingsResult] = await Promise.all([
         api.getProjectGroups().catch(e => ({ success: false })),
         api.getDashboardStats().catch(e => ({ success: false })),
-        api.getTeamMembers().catch(e => ({ success: false }))
+        api.getTeamMembers().catch(e => ({ success: false })),
+        api.getMeetings().catch(e => ({ success: false }))
       ]);
 
       if (projectGroupsResult.success) {
@@ -81,6 +83,10 @@ class DigiHubApp {
 
       if (teamResult.success) {
         this.state.teamMembers = teamResult.data;
+      }
+
+      if (meetingsResult.success) {
+        this.state.meetings = meetingsResult.data;
       }
 
       console.log('Initial data loaded successfully');
