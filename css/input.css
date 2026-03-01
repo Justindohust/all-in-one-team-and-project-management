@@ -317,3 +317,86 @@
     page-break-inside: avoid;
   }
 }
+
+/* ================================
+   Meeting Detail – Inline Editing
+   ================================ */
+
+/* Contenteditable placeholder */
+.minutes-editable:empty::before {
+  content: attr(data-placeholder);
+  color: #64748b; /* slate-500 */
+  font-style: italic;
+  pointer-events: none;
+}
+
+/* Rich-text toolbar: slide in when wrapper is hovered or editor focused */
+.meeting-minutes-wrapper:hover .minutes-toolbar,
+.meeting-minutes-wrapper:focus-within .minutes-toolbar {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* The toolbar sits at the top border of the box; show a subtle separator */
+.meeting-minutes-wrapper .minutes-toolbar {
+  border-bottom-color: transparent;
+}
+.meeting-minutes-wrapper:hover .minutes-toolbar,
+.meeting-minutes-wrapper:focus-within .minutes-toolbar {
+  border-bottom-color: rgba(51, 65, 85, 0.8) !important;
+}
+
+/* Inline field subtle edit indicator */
+.meeting-inline-field:hover {
+  cursor: text;
+}
+
+/* People field: pointer cursor to hint dropdown */
+.meeting-people-field:hover {
+  cursor: pointer;
+}
+
+/* Date/time colour scheme */
+input[type="date"].meeting-inline-field,
+input[type="time"].meeting-inline-field,
+input[type="date"],
+input[type="time"] {
+  color-scheme: dark;
+}
+
+/* ---- Status badge-style select ---- */
+.meeting-status-badge {
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8; /* indigo-400 / primary-400 */
+}
+.meeting-status-badge:focus {
+  background: rgba(99, 102, 241, 0.25);
+}
+/* option backgrounds */
+.meeting-status-badge option { background: #1e293b; }
+
+/* status color variants applied via JS */
+.meeting-status-badge.status-scheduled   { background: rgba(99,102,241,.15); color: #818cf8; }
+.meeting-status-badge.status-in_progress { background: rgba(234,179,8,.15);  color: #facc15; }
+.meeting-status-badge.status-completed   { background: rgba(34,197,94,.15);  color: #4ade80; }
+.meeting-status-badge.status-cancelled   { background: rgba(239,68,68,.15);  color: #f87171; }
+
+/* Rich text content inside meeting minutes */
+#meeting-detail-minutes h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin: 0.6rem 0 0.2rem;
+}
+#meeting-detail-minutes ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  margin: 0.25rem 0;
+}
+#meeting-detail-minutes ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+  margin: 0.25rem 0;
+}
+#meeting-detail-minutes li { margin: 0.1rem 0; }
+#meeting-detail-minutes p  { margin: 0.15rem 0; }

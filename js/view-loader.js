@@ -63,7 +63,7 @@ class ViewLoader {
     }
 
     try {
-      const response = await fetch(`views/${viewName}.html`);
+      const response = await fetch(`views/${viewName}.html?v=${Date.now()}`, { cache: 'no-store' });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -217,7 +217,8 @@ function navigateTo(pageId) {
     messages: 'Messages',
     reports: 'Reports',
     settings: 'Settings',
-    meetings: 'Meetings'
+    meetings: 'Meetings',
+    'process-flow': 'Process Flow'
   };
   
   const titleElement = document.getElementById('page-title');

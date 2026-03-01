@@ -22,6 +22,14 @@ app.use((req, res, next) => {
   next();
 });
 
+// Serve static files from parent directory (frontend)
+app.use(express.static(path.join(__dirname, '..')));
+
+// Serve index.html for root route
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'index.html'));
+});
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));

@@ -1,5 +1,218 @@
-<!-- Meetings Page -->
 <div id="meetings-page" class="page hidden">
+  <style>
+/* ---- Meeting detail – polished styles & animations ---- */
+
+/* === Modal backdrop & entrance === */
+#meeting-detail-modal{transition:visibility 0s,opacity .25s ease}
+#meeting-detail-modal.hidden{visibility:hidden;opacity:0;pointer-events:none}
+#meeting-detail-modal:not(.hidden){visibility:visible;opacity:1}
+#meeting-detail-modal>.mtg-backdrop{transition:opacity .3s ease}
+#meeting-detail-modal.hidden .mtg-backdrop{opacity:0}
+#meeting-detail-modal .mtg-dialog{
+  transition:transform .35s cubic-bezier(.22,1,.36,1),opacity .3s ease;
+  transform:translateY(0) scale(1);opacity:1;
+}
+#meeting-detail-modal.hidden .mtg-dialog{
+  transform:translateY(24px) scale(.97);opacity:0;
+}
+
+/* === Glassmorphism card === */
+.mtg-card{
+  background:linear-gradient(145deg,rgba(30,41,59,.97),rgba(15,23,42,.98));
+  border:1px solid rgba(71,85,105,.45);
+  box-shadow:0 25px 60px -12px rgba(0,0,0,.55),0 0 0 1px rgba(148,163,184,.06) inset,0 1px 0 rgba(148,163,184,.08) inset;
+  border-radius:1rem;
+}
+
+/* === Scrollbar polish === */
+.mtg-body::-webkit-scrollbar{width:5px}
+.mtg-body::-webkit-scrollbar-track{background:transparent}
+.mtg-body::-webkit-scrollbar-thumb{background:rgba(100,116,139,.35);border-radius:99px}
+.mtg-body::-webkit-scrollbar-thumb:hover{background:rgba(100,116,139,.55)}
+
+/* === Inline field hover/focus glow === */
+.meeting-inline-field{
+  transition:border-color .2s ease,background-color .2s ease,box-shadow .2s ease;
+}
+.meeting-inline-field:focus{
+  box-shadow:0 0 0 2px rgba(99,102,241,.18);
+}
+
+/* === Status badge === */
+.meeting-status-badge{
+  appearance:none;padding:.25rem .3rem .25rem .65rem;border-radius:9999px;
+  font-size:.75rem;font-weight:600;letter-spacing:.01em;
+  border:none;cursor:pointer;outline:none;
+  transition:background-color .2s ease,color .2s ease,box-shadow .2s ease;
+}
+.meeting-status-badge:focus{box-shadow:0 0 0 2px rgba(99,102,241,.25)}
+.meeting-status-badge.status-scheduled  {background:rgba(99,102,241,.15);color:#a5b4fc}
+.meeting-status-badge.status-in_progress{background:rgba(234,179,8,.15);color:#fde047}
+.meeting-status-badge.status-completed  {background:rgba(34,197,94,.15);color:#86efac}
+.meeting-status-badge.status-cancelled  {background:rgba(239,68,68,.15);color:#fca5a5}
+.meeting-status-badge option{background:#1e293b;color:#e2e8f0}
+
+/* === People field & dropdown === */
+.meeting-people-field{
+  transition:border-color .2s ease,background-color .2s ease,box-shadow .2s ease;
+}
+.meeting-people-field:hover{
+  border-color:rgba(100,116,139,.6);background:rgba(15,23,42,.35);
+}
+.mtg-inline-dropdown{
+  transform-origin:top center;
+  transition:opacity .2s ease,transform .2s cubic-bezier(.22,1,.36,1);
+  transform:translateY(0) scaleY(1);opacity:1;
+}
+.mtg-inline-dropdown.hidden{
+  opacity:0;transform:translateY(-6px) scaleY(.96);pointer-events:none;
+  display:block!important;visibility:hidden;
+}
+.mtg-dropdown-card{
+  background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(15,23,42,.95));
+  border:1px solid rgba(71,85,105,.5);
+  box-shadow:0 12px 40px -8px rgba(0,0,0,.45),0 0 0 1px rgba(148,163,184,.04) inset;
+  border-radius:.75rem;overflow:hidden;
+}
+
+/* === People chip pill === */
+.people-chip{
+  display:inline-flex;align-items:center;gap:.35rem;
+  padding:.15rem .5rem .15rem .2rem;border-radius:9999px;
+  background:rgba(51,65,85,.45);border:1px solid rgba(71,85,105,.4);
+  font-size:.75rem;color:#cbd5e1;
+  transition:background-color .15s ease,border-color .15s ease;
+}
+.people-chip:hover{background:rgba(71,85,105,.5);border-color:rgba(100,116,139,.5)}
+.people-chip .chip-avatar{
+  width:1.25rem;height:1.25rem;border-radius:9999px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.55rem;font-weight:700;color:#fff;flex-shrink:0;
+}
+.people-chip .chip-remove{
+  opacity:.5;cursor:pointer;transition:opacity .15s ease,color .15s ease;
+  font-size:.7rem;line-height:1;padding:0 .1rem;
+}
+.people-chip .chip-remove:hover{opacity:1;color:#f87171}
+
+/* === Add button === */
+.people-add-btn{
+  display:inline-flex;align-items:center;gap:.3rem;
+  padding:.2rem .6rem;border-radius:9999px;
+  border:1px dashed rgba(100,116,139,.45);
+  color:rgba(148,163,184,.7);font-size:.75rem;
+  cursor:pointer;
+  transition:border-color .2s ease,color .2s ease,background-color .2s ease;
+}
+.people-add-btn:hover{
+  border-color:rgba(99,102,241,.5);color:rgba(129,140,248,.85);
+  background:rgba(99,102,241,.06);
+}
+
+/* === Dropdown member row === */
+.mtg-member-row{
+  display:flex;align-items:center;gap:.75rem;
+  padding:.5rem .75rem;border-radius:.5rem;cursor:pointer;
+  transition:background-color .15s ease;
+}
+.mtg-member-row:hover{background:rgba(30,41,59,.7)}
+.mtg-member-row.selected{background:rgba(30,41,59,.5)}
+.mtg-member-avatar{
+  width:2rem;height:2rem;border-radius:9999px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.7rem;font-weight:700;color:#fff;flex-shrink:0;
+  position:relative;
+}
+.mtg-member-check{
+  position:absolute;bottom:-2px;right:-2px;
+  width:.875rem;height:.875rem;border-radius:9999px;
+  background:#6366f1;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 0 2px #0f172a;
+}
+.mtg-member-check svg{width:.5rem;height:.5rem;color:#fff}
+
+/* === Checkbox custom === */
+.mtg-checkbox{
+  appearance:none;width:1rem;height:1rem;border-radius:.25rem;
+  border:1.5px solid rgba(100,116,139,.5);background:rgba(15,23,42,.6);
+  cursor:pointer;transition:all .15s ease;flex-shrink:0;position:relative;
+}
+.mtg-checkbox:checked{
+  background:#6366f1;border-color:#6366f1;
+}
+.mtg-checkbox:checked::after{
+  content:'';position:absolute;left:3px;top:1px;
+  width:5px;height:8px;border:solid #fff;border-width:0 2px 2px 0;
+  transform:rotate(45deg);
+}
+.mtg-checkbox:focus{box-shadow:0 0 0 2px rgba(99,102,241,.25)}
+
+/* === Minutes rich editor === */
+.minutes-editable:empty::before{content:attr(data-placeholder);color:#475569;font-style:italic;pointer-events:none}
+.meeting-minutes-wrapper{
+  transition:border-color .2s ease,box-shadow .2s ease;
+}
+.meeting-minutes-wrapper:hover{border-color:rgba(100,116,139,.6)}
+.meeting-minutes-wrapper:focus-within{
+  border-color:rgba(99,102,241,.5);
+  box-shadow:0 0 0 2px rgba(99,102,241,.12);
+}
+.meeting-minutes-wrapper:hover .minutes-toolbar,
+.meeting-minutes-wrapper:focus-within .minutes-toolbar{
+  opacity:1!important;pointer-events:auto!important;
+  max-height:3rem;padding-top:.375rem;padding-bottom:.375rem;
+  border-bottom-color:rgba(51,65,85,.6)!important;
+}
+.minutes-toolbar{
+  border-bottom-color:transparent;
+  max-height:0;padding-top:0;padding-bottom:0;overflow:hidden;
+  transition:opacity .25s ease,max-height .3s cubic-bezier(.22,1,.36,1),padding .3s ease,border-bottom-color .2s ease;
+}
+.minutes-toolbar button{transition:background-color .15s ease,color .15s ease}
+
+/* === Date/time inputs === */
+input[type="date"],input[type="time"]{color-scheme:dark}
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator{
+  filter:invert(.6);cursor:pointer;transition:filter .15s ease;
+}
+input[type="date"]:hover::-webkit-calendar-picker-indicator,
+input[type="time"]:hover::-webkit-calendar-picker-indicator{filter:invert(.8)}
+
+/* === Rich text content === */
+#meeting-detail-minutes h3{font-size:.95rem;font-weight:600;color:#f1f5f9;margin:.6rem 0 .2rem}
+#meeting-detail-minutes ul{list-style:disc;padding-left:1.25rem;margin:.25rem 0}
+#meeting-detail-minutes ol{list-style:decimal;padding-left:1.25rem;margin:.25rem 0}
+#meeting-detail-minutes li,#meeting-detail-minutes p{margin:.1rem 0}
+
+/* === Footer buttons === */
+.mtg-footer-btn{transition:all .2s ease}
+.mtg-footer-btn:active{transform:scale(.97)}
+.mtg-btn-save{
+  background:linear-gradient(135deg,#6366f1,#4f46e5);
+  box-shadow:0 2px 8px -2px rgba(99,102,241,.4);
+}
+.mtg-btn-save:hover{
+  background:linear-gradient(135deg,#818cf8,#6366f1);
+  box-shadow:0 4px 14px -2px rgba(99,102,241,.5);
+}
+.mtg-btn-delete{transition:all .2s ease}
+.mtg-btn-delete:hover{background:rgba(239,68,68,.1)}
+.mtg-btn-delete:active{transform:scale(.97)}
+
+/* === Label accents === */
+.mtg-label{
+  font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
+  color:rgba(148,163,184,.7);margin-bottom:.35rem;
+}
+
+/* === Section dividers === */
+.mtg-section{position:relative;padding-bottom:1rem;margin-bottom:1rem}
+.mtg-section::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;
+  height:1px;background:linear-gradient(90deg,transparent,rgba(71,85,105,.3),transparent);
+}
+  </style>
   <div class="flex flex-col lg:flex-row gap-6">
     <!-- Main Content -->
     <div class="flex-1">
@@ -184,197 +397,208 @@
       </div>
     </div>
   </div>
-</div>
 
-<!-- Meeting Detail Modal -->
-<div id="meeting-detail-modal" class="fixed inset-0 z-50 hidden">
-  <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeMeetingDetailModal()"></div>
-  <div class="fixed inset-0 overflow-y-auto">
+  <!-- Meeting Detail Modal -->
+  <div id="meeting-detail-modal" class="fixed inset-0 z-50 hidden">
+  <div class="mtg-backdrop fixed inset-0 bg-slate-950/75 backdrop-blur-sm" onclick="closeMeetingDetailModal()"></div>
+  <div class="mtg-dialog fixed inset-0 overflow-y-auto">
     <div class="flex min-h-full items-center justify-center p-4">
-      <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-2xl max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
+      <div class="mtg-card relative w-full max-w-2xl max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
+
         <!-- Modal Header -->
-        <div class="flex items-center justify-between p-6 border-b border-slate-700/50">
-          <div>
-            <h3 id="meeting-detail-title" class="text-xl font-semibold text-white">Meeting Title</h3>
-            <p id="meeting-detail-subtitle" class="text-sm text-slate-400 mt-1">Recurring • Weekly</p>
+        <div class="flex items-center justify-between px-6 py-5 border-b border-slate-700/40">
+          <div class="flex-1 min-w-0">
+            <div
+              id="meeting-title-display"
+              contenteditable="true"
+              spellcheck="false"
+              tabindex="0"
+              class="meeting-inline-field text-xl font-semibold text-white outline-none rounded-lg px-2.5 py-1 -ml-2.5 border border-transparent hover:border-slate-600/60 focus:border-primary-500/70 focus:bg-slate-900/50 cursor-text"
+            >Meeting Title</div>
+            <p id="meeting-detail-subtitle" class="text-sm text-slate-500 mt-1.5 ml-0.5 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <span>One-time</span>
+            </p>
           </div>
-          <button onclick="closeMeetingDetailModal()" class="text-slate-400 hover:text-white">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button onclick="closeMeetingDetailModal()" class="ml-4 flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-slate-700/60 transition-all duration-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
           </button>
         </div>
-        
+
         <!-- Modal Body -->
-        <div class="p-6 overflow-y-auto max-h-[60vh]">
-          <!-- Meeting Info -->
-          <div class="grid grid-cols-2 gap-4 mb-6">
-            <div>
-              <label class="block text-xs font-medium text-slate-400 mb-1">Date & Time</label>
-              <p id="meeting-detail-datetime" class="text-white">-</p>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-400 mb-1">Duration</label>
-              <p id="meeting-detail-duration" class="text-white">-</p>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-400 mb-1">Location</label>
-              <p id="meeting-detail-location" class="text-white">-</p>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-400 mb-1">Status</label>
-              <span id="meeting-detail-status" class="px-2 py-1 text-xs font-medium rounded-full bg-primary-500/20 text-primary-400">Scheduled</span>
-            </div>
-          </div>
-          
-          <!-- Participants Section -->
-          <div class="mb-6">
-            <div class="flex items-center justify-between mb-3">
-              <h4 class="font-medium text-white">Participants</h4>
-              <button onclick="editMeetingParticipants()" class="text-xs text-primary-400 hover:text-primary-300">Edit</button>
-            </div>
-            <div id="meeting-detail-participants" class="flex flex-wrap gap-2">
-              <!-- Will be populated dynamically -->
-            </div>
-          </div>
-          
-          <!-- Notify Section -->
-          <div class="mb-6">
-            <div class="flex items-center justify-between mb-3">
-              <h4 class="font-medium text-white">Send minutes to</h4>
-              <button onclick="editMeetingNotifiees()" class="text-xs text-primary-400 hover:text-primary-300">Edit</button>
-            </div>
-            <div id="meeting-detail-notifiees" class="flex flex-wrap gap-2">
-              <!-- Will be populated dynamically -->
-            </div>
-          </div>
-          
-          <!-- Meeting Minutes Section -->
-          <div>
-            <div class="flex items-center justify-between mb-3">
-              <h4 class="font-medium text-white">Meeting Minutes</h4>
-              <div class="flex gap-2">
-                <button onclick="sendMeetingMinutes()" class="text-xs px-2 py-1 bg-primary-500/20 text-primary-400 rounded hover:bg-primary-500/30">
-                  Send Minutes
-                </button>
+        <div class="mtg-body px-6 py-5 overflow-y-auto max-h-[62vh]">
+
+          <!-- Date & Time Section -->
+          <div class="mtg-section">
+            <label class="mtg-label block">Date &amp; Time</label>
+            <div class="flex items-center gap-2 flex-wrap">
+              <input type="date" id="meeting-date-input" tabindex="1"
+                class="meeting-inline-field bg-slate-900/40 border border-slate-700/50 hover:border-slate-500/70 focus:border-primary-500/70 focus:bg-slate-900/60 rounded-lg px-3 py-1.5 text-white text-sm outline-none cursor-pointer">
+              <input type="time" id="meeting-start-time-input" tabindex="2"
+                class="meeting-inline-field bg-slate-900/40 border border-slate-700/50 hover:border-slate-500/70 focus:border-primary-500/70 focus:bg-slate-900/60 rounded-lg px-3 py-1.5 text-slate-300 text-sm outline-none">
+              <span class="text-slate-600 text-sm select-none font-medium">–</span>
+              <input type="time" id="meeting-end-time-input" tabindex="3"
+                class="meeting-inline-field bg-slate-900/40 border border-slate-700/50 hover:border-slate-500/70 focus:border-primary-500/70 focus:bg-slate-900/60 rounded-lg px-3 py-1.5 text-slate-300 text-sm outline-none">
+              <div class="relative">
+                <select id="meeting-duration-input" tabindex="4"
+                  class="meeting-inline-field appearance-none bg-slate-900/40 border border-slate-700/50 hover:border-slate-500/70 focus:border-primary-500/70 rounded-lg pl-3 pr-7 py-1.5 text-slate-300 text-sm outline-none cursor-pointer">
+                  <option value="15" class="bg-slate-800">15 min</option>
+                  <option value="30" class="bg-slate-800">30 min</option>
+                  <option value="45" class="bg-slate-800">45 min</option>
+                  <option value="60" class="bg-slate-800">1 hour</option>
+                  <option value="90" class="bg-slate-800">1.5 hours</option>
+                  <option value="120" class="bg-slate-800">2 hours</option>
+                  <option value="180" class="bg-slate-800">3 hours</option>
+                </select>
+                <svg class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
               </div>
             </div>
-            <div id="meeting-detail-minutes" class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 min-h-[150px]">
-              <p class="text-sm text-slate-400 italic">No meeting minutes yet. Click to add...</p>
+          </div>
+
+          <!-- Location & Status -->
+          <div class="mtg-section">
+            <div class="grid grid-cols-2 gap-x-6 gap-y-3">
+              <div>
+                <label class="mtg-label block">Location</label>
+                <input type="text" id="meeting-location-input" tabindex="5" placeholder="Add location…"
+                  class="meeting-inline-field w-full bg-slate-900/40 border border-slate-700/50 hover:border-slate-500/70 focus:border-primary-500/70 focus:bg-slate-900/60 rounded-lg px-3 py-1.5 text-white text-sm outline-none placeholder-slate-600">
+              </div>
+              <div>
+                <label class="mtg-label block">Status</label>
+                <div class="relative inline-flex">
+                  <select id="meeting-status-input" tabindex="6"
+                    class="meeting-status-badge">
+                    <option value="scheduled">Scheduled</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                  <svg class="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Participants -->
+          <div class="mtg-section">
+            <label class="mtg-label block">Participants</label>
+            <div class="relative">
+              <div id="meeting-detail-participants"
+                class="meeting-people-field flex flex-wrap items-center gap-1.5 min-h-[2.25rem] px-2.5 py-2 rounded-lg border border-slate-700/50 bg-slate-900/25 cursor-pointer"
+                onclick="toggleMeetingInlineDropdown('participants', event)">
+                <span class="text-sm text-slate-600 meeting-people-placeholder">+ Add participants</span>
+              </div>
+              <div id="participants-inline-dropdown"
+                class="mtg-inline-dropdown hidden absolute left-0 right-0 mt-1.5 z-20">
+                <div class="mtg-dropdown-card">
+                  <div class="p-2.5 border-b border-slate-700/40">
+                    <input type="text" placeholder="Search members…" oninput="filterMeetingDropdown('participants', this.value)"
+                      class="w-full bg-slate-800/80 border border-slate-700/50 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-primary-500/60 placeholder-slate-600 transition-colors">
+                  </div>
+                  <div id="participants-list-edit" class="max-h-[200px] overflow-y-auto p-1.5">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Send Minutes To -->
+          <div class="mtg-section">
+            <label class="mtg-label block">Send minutes to</label>
+            <div class="relative">
+              <div id="meeting-detail-notifiees"
+                class="meeting-people-field flex flex-wrap items-center gap-1.5 min-h-[2.25rem] px-2.5 py-2 rounded-lg border border-slate-700/50 bg-slate-900/25 cursor-pointer"
+                onclick="toggleMeetingInlineDropdown('notifiees', event)">
+                <span class="text-sm text-slate-600 meeting-people-placeholder">+ Add recipients</span>
+              </div>
+              <div id="notifiees-inline-dropdown"
+                class="mtg-inline-dropdown hidden absolute left-0 right-0 mt-1.5 z-20">
+                <div class="mtg-dropdown-card">
+                  <div class="p-2.5 border-b border-slate-700/40">
+                    <input type="text" placeholder="Search members…" oninput="filterMeetingDropdown('notifiees', this.value)"
+                      class="w-full bg-slate-800/80 border border-slate-700/50 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-primary-500/60 placeholder-slate-600 transition-colors">
+                  </div>
+                  <div id="notifiees-list-edit" class="max-h-[200px] overflow-y-auto p-1.5">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Meeting Minutes – rich text inline with embedded toolbar -->
+          <div>
+            <label class="mtg-label block">Meeting Minutes</label>
+            <div class="meeting-minutes-wrapper rounded-lg border border-slate-700/50 bg-slate-900/40 overflow-hidden">
+
+              <!-- Toolbar: slides down on hover/focus -->
+              <div id="minutes-rich-toolbar"
+                class="minutes-toolbar flex items-center gap-0.5 px-2 border-b bg-slate-900/80 opacity-0 pointer-events-none select-none">
+                <button type="button" onmousedown="event.preventDefault(); formatMeetingMinutes('bold')"
+                  class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-slate-700/70 text-slate-400 hover:text-white font-bold text-sm" title="Bold">B</button>
+                <button type="button" onmousedown="event.preventDefault(); formatMeetingMinutes('italic')"
+                  class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-slate-700/70 text-slate-400 hover:text-white italic text-sm" title="Italic">I</button>
+                <button type="button" onmousedown="event.preventDefault(); formatMeetingMinutes('underline')"
+                  class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-slate-700/70 text-slate-400 hover:text-white underline text-sm" title="Underline">U</button>
+                <button type="button" onmousedown="event.preventDefault(); formatMeetingMinutes('strikeThrough')"
+                  class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-slate-700/70 text-slate-500 hover:text-white line-through text-sm" title="Strikethrough">S</button>
+                <div class="w-px h-4 bg-slate-600/50 mx-1"></div>
+                <button type="button" onmousedown="event.preventDefault(); formatMeetingMinutes('formatBlock', 'h3')"
+                  class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-slate-700/70 text-slate-400 hover:text-white text-xs font-bold" title="Heading">H</button>
+                <button type="button" onmousedown="event.preventDefault(); formatMeetingMinutes('formatBlock', 'p')"
+                  class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-slate-700/70 text-slate-400 hover:text-white text-sm" title="Paragraph">¶</button>
+                <div class="w-px h-4 bg-slate-600/50 mx-1"></div>
+                <button type="button" onmousedown="event.preventDefault(); formatMeetingMinutes('insertUnorderedList')"
+                  class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-slate-700/70 text-slate-400 hover:text-white" title="Bullet list">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+                </button>
+                <button type="button" onmousedown="event.preventDefault(); formatMeetingMinutes('insertOrderedList')"
+                  class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-slate-700/70 text-slate-400 hover:text-white" title="Numbered list">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20h14M7 12h14M7 4h14M3 20h.01M3 12h.01M3 4h.01"/></svg>
+                </button>
+                <div class="w-px h-4 bg-slate-600/50 mx-1"></div>
+                <button type="button" onmousedown="event.preventDefault(); formatMeetingMinutes('removeFormat')"
+                  class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-slate-700/70 text-slate-500 hover:text-white text-xs" title="Clear formatting">Tx</button>
+                <div class="flex-1"></div>
+                <button type="button" onclick="sendMeetingMinutes()"
+                  class="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-primary-400 hover:bg-primary-500/15 transition-colors">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                  Send
+                </button>
+              </div>
+
+              <div
+                id="meeting-detail-minutes"
+                contenteditable="true"
+                tabindex="7"
+                data-placeholder="No meeting minutes yet. Click to add…"
+                class="minutes-editable p-4 min-h-[140px] text-sm text-slate-300 outline-none leading-relaxed"
+              ></div>
             </div>
           </div>
         </div>
-        
+
         <!-- Modal Footer -->
-        <div class="flex items-center justify-between p-6 border-t border-slate-700/50 bg-slate-900/30">
-          <button onclick="deleteMeeting()" class="px-4 py-2 text-danger hover:bg-danger/10 rounded-lg transition-colors">
-            Delete Meeting
+        <div class="flex items-center justify-between px-6 py-4 border-t border-slate-700/30 bg-slate-900/20">
+          <button onclick="deleteMeeting()" class="mtg-btn-delete px-3 py-1.5 text-red-400 hover:text-red-300 rounded-lg text-sm font-medium">
+            <span class="flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              Delete
+            </span>
           </button>
-          <div class="flex items-center gap-3">
-            <button onclick="closeMeetingDetailModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg">
+          <div class="flex items-center gap-2.5">
+            <button onclick="closeMeetingDetailModal()" class="mtg-footer-btn px-4 py-2 bg-slate-700/60 hover:bg-slate-600/70 text-slate-300 hover:text-white rounded-lg text-sm font-medium border border-slate-600/30 hover:border-slate-500/40">
               Close
             </button>
-            <button onclick="saveMeetingDetails()" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg">
+            <button onclick="saveMeetingDetails()" class="mtg-footer-btn mtg-btn-save px-5 py-2 text-white rounded-lg text-sm font-semibold">
               Save Changes
             </button>
           </div>
         </div>
+
       </div>
     </div>
   </div>
-</div>
-
-<!-- Edit Participants Modal -->
-<div id="edit-participants-modal" class="fixed inset-0 z-[60] hidden">
-  <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeEditParticipantsModal()"></div>
-  <div class="fixed inset-0 overflow-y-auto">
-    <div class="flex min-h-full items-center justify-center p-4">
-      <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-md p-6" onclick="event.stopPropagation()">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-semibold text-white">Edit Participants</h3>
-          <button onclick="closeEditParticipantsModal()" class="text-slate-400 hover:text-white">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
-        </div>
-        
-        <div class="space-y-3 max-h-[300px] overflow-y-auto" id="participants-list-edit">
-          <!-- Will be populated dynamically with checkboxes -->
-        </div>
-        
-        <div class="flex items-center gap-3 mt-6">
-          <button onclick="closeEditParticipantsModal()" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg">
-            Cancel
-          </button>
-          <button onclick="saveParticipants()" class="flex-1 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg">
-            Save
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Edit Notifiees Modal -->
-<div id="edit-notifiees-modal" class="fixed inset-0 z-[60] hidden">
-  <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeEditNotifieesModal()"></div>
-  <div class="fixed inset-0 overflow-y-auto">
-    <div class="flex min-h-full items-center justify-center p-4">
-      <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-md p-6" onclick="event.stopPropagation()">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-semibold text-white">Edit Notifiees</h3>
-          <button onclick="closeEditNotifieesModal()" class="text-slate-400 hover:text-white">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
-        </div>
-        
-        <div class="space-y-3 max-h-[300px] overflow-y-auto" id="notifiees-list-edit">
-          <!-- Will be populated dynamically with checkboxes -->
-        </div>
-        
-        <div class="flex items-center gap-3 mt-6">
-          <button onclick="closeEditNotifieesModal()" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg">
-            Cancel
-          </button>
-          <button onclick="saveNotifiees()" class="flex-1 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg">
-            Save
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Minutes Editor Modal -->
-<div id="minutes-editor-modal" class="fixed inset-0 z-[60] hidden">
-  <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeMinutesEditorModal()"></div>
-  <div class="fixed inset-0 overflow-y-auto">
-    <div class="flex min-h-full items-center justify-center p-4">
-      <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-2xl p-6" onclick="event.stopPropagation()">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-semibold text-white">Edit Meeting Minutes</h3>
-          <button onclick="closeMinutesEditorModal()" class="text-slate-400 hover:text-white">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
-        </div>
-        
-        <textarea id="meeting-minutes-editor" rows="15" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none font-mono text-sm" placeholder="Enter meeting minutes here..."></textarea>
-        
-        <div class="flex items-center gap-3 mt-6">
-          <button onclick="closeMinutesEditorModal()" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg">
-            Cancel
-          </button>
-          <button onclick="saveMeetingMinutes()" class="flex-1 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg">
-            Save Minutes
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
+  </div><!-- /meeting-detail-modal -->
+</div><!-- /meetings-page -->

@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
   <!-- Tailwind CSS -->
-  <link href="css/output.css" rel="stylesheet">
+  <link href="css/output.css?v=20260228e" rel="stylesheet">
 </head>
 <body class="font-sans antialiased bg-slate-900 text-slate-100 min-h-screen">
   <div id="app" class="flex min-h-screen">
@@ -61,6 +61,12 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
           </svg>
           Meetings
+        </a>
+        <a href="#process-flow" data-page="process-flow" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium cursor-pointer" onclick="navigateTo('process-flow')">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+          </svg>
+          Process Flow
         </a>
         <a href="#team" data-page="team" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium cursor-pointer" onclick="navigateTo('team')">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -332,111 +338,20 @@
     </div>
   </div>
 
-  <!-- Meeting Detail Modal -->
-  <div id="meeting-detail-modal" class="fixed inset-0 z-50 hidden">
-    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeMeetingDetailModal()"></div>
-    <div class="fixed inset-0 overflow-y-auto">
-      <div class="flex min-h-full items-center justify-center p-4">
-        <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-2xl max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
-          <div class="flex items-center justify-between p-6 border-b border-slate-700/50">
-            <div>
-              <h3 id="meeting-detail-title" class="text-xl font-semibold text-white">Meeting Title</h3>
-              <p id="meeting-detail-subtitle" class="text-sm text-slate-400 mt-1">Recurring • Weekly</p>
-            </div>
-            <button onclick="closeMeetingDetailModal()" class="text-slate-400 hover:text-white">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
-            </button>
-          </div>
-          <div class="p-6 overflow-y-auto max-h-[60vh]">
-            <div class="grid grid-cols-2 gap-4 mb-6">
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1">Date & Time</label>
-                <p id="meeting-detail-datetime" class="text-white">-</p>
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1">Duration</label>
-                <p id="meeting-detail-duration" class="text-white">-</p>
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1">Location</label>
-                <p id="meeting-detail-location" class="text-white">-</p>
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1">Status</label>
-                <span id="meeting-detail-status" class="px-2 py-1 text-xs font-medium rounded-full bg-primary-500/20 text-primary-400">Scheduled</span>
-              </div>
-            </div>
-            <div class="mb-6">
-              <div class="flex items-center justify-between mb-3">
-                <h4 class="font-medium text-white">Participants</h4>
-                <button onclick="editMeetingParticipants()" class="text-xs text-primary-400 hover:text-primary-300">Edit</button>
-              </div>
-              <div id="meeting-detail-participants" class="flex flex-wrap gap-2"></div>
-            </div>
-            <div class="mb-6">
-              <div class="flex items-center justify-between mb-3">
-                <h4 class="font-medium text-white">Send minutes to</h4>
-                <button onclick="editMeetingNotifiees()" class="text-xs text-primary-400 hover:text-primary-300">Edit</button>
-              </div>
-              <div id="meeting-detail-notifiees" class="flex flex-wrap gap-2"></div>
-            </div>
-            <div>
-              <div class="flex items-center justify-between mb-3">
-                <h4 class="font-medium text-white">Meeting Minutes</h4>
-              </div>
-              <div id="meeting-detail-minutes" class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 min-h-[150px]">
-                <p class="text-sm text-slate-400 italic">No meeting minutes yet. Click to add...</p>
-              </div>
-            </div>
-          </div>
-          <div class="flex items-center justify-between p-6 border-t border-slate-700/50 bg-slate-900/30">
-            <button onclick="deleteMeeting()" class="px-4 py-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">Delete Meeting</button>
-            <button onclick="closeMeetingDetailModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg">Close</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Minutes Editor Modal -->
-  <div id="minutes-editor-modal" class="fixed inset-0 z-[60] hidden">
-    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeMinutesEditorModal()"></div>
-    <div class="fixed inset-0 overflow-y-auto">
-      <div class="flex min-h-full items-center justify-center p-4">
-        <div class="relative bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-2xl p-6" onclick="event.stopPropagation()">
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-semibold text-white">Edit Meeting Minutes</h3>
-            <button onclick="closeMinutesEditorModal()" class="text-slate-400 hover:text-white">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
-            </button>
-          </div>
-          <textarea id="meeting-minutes-editor" rows="15" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none font-mono text-sm" placeholder="Enter meeting minutes here..."></textarea>
-          <div class="flex items-center gap-3 mt-6">
-            <button onclick="closeMinutesEditorModal()" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg">Cancel</button>
-            <button onclick="saveMeetingMinutes()" class="flex-1 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg">Save Minutes</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- JavaScript Files -->
-  <script src="js/api.js"></script>
-  <script src="js/notification.js"></script>
-  <script src="js/activities.js"></script>
-  <script src="js/view-loader.js"></script>
-  <script src="js/inline-edit-helpers.js"></script>
-  <script src="js/dropdown-editors.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/settings.js"></script>
-  <script src="js/tree-view.js"></script>
-  <script src="js/projects.js"></script>
-  <script src="js/projects-table-view.js"></script>
-  <script src="js/meetings.js"></script>
+  <script src="js/api.js?v=20260228e"></script>
+  <script src="js/notification.js?v=20260228e"></script>
+  <script src="js/activities.js?v=20260228e"></script>
+  <script src="js/view-loader.js?v=20260228e"></script>
+  <script src="js/inline-edit-helpers.js?v=20260228e"></script>
+  <script src="js/dropdown-editors.js?v=20260228e"></script>
+  <script src="js/app.js?v=20260228e"></script>
+  <script src="js/settings.js?v=20260228e"></script>
+  <script src="js/tree-view.js?v=20260228e"></script>
+  <script src="js/projects.js?v=20260228e"></script>
+  <script src="js/projects-table-view.js?v=20260228e"></script>
+  <script src="js/meetings.js?v=20260228e"></script>
+  <script src="js/process-flow.js?v=20260228e"></script>
   
   <!-- TreeView Component -->
   <script>
@@ -605,6 +520,7 @@
       viewLoader.onViewLoad('messages', initMessages);
       viewLoader.onViewLoad('reports', initReports);
       viewLoader.onViewLoad('settings', initSettings);
+      viewLoader.onViewLoad('process-flow', initProcessFlowPage);
       
       // Navigate to initial page
       navigateTo('dashboard');
@@ -719,6 +635,11 @@
       if (typeof settingsManager !== 'undefined') {
         settingsManager.initialize();
       }
+    }
+
+    function initProcessFlow() {
+      console.log('[ProcessFlow] Initializing from initProcessFlow...');
+      initProcessFlowPage();
     }
 
     // Dashboard functions
@@ -1013,8 +934,8 @@
   </script>
 
   <!-- Additional Scripts -->
-  <script src="js/global-search.js"></script>
-  <script src="js/notifications.js"></script>
-  <script src="js/form-view.js"></script>
+  <script src="js/global-search.js?v=20260228e"></script>
+  <script src="js/notifications.js?v=20260228e"></script>
+  <script src="js/form-view.js?v=20260228e"></script>
 </body>
 </html>

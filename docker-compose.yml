@@ -58,6 +58,14 @@ services:
     restart: unless-stopped
     ports:
       - "3000:80"
+    volumes:
+      # Mount source files directly so changes reflect without rebuild
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./process-flow-editor.html:/usr/share/nginx/html/process-flow-editor.html:ro
+      - ./js:/usr/share/nginx/html/js:ro
+      - ./views:/usr/share/nginx/html/views:ro
+      - ./resources:/usr/share/nginx/html/resources:ro
+      - ./css/output.css:/usr/share/nginx/html/css/output.css:ro
     depends_on:
       - backend
     networks:
