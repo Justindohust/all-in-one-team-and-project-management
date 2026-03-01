@@ -338,6 +338,119 @@
     </div>
   </div>
 
+  <!-- Meeting Detail Modal -->
+  <div id="meeting-detail-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeMeetingDetailModal()"></div>
+    <div class="relative bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+      <!-- Header -->
+      <div class="flex items-center justify-between p-4 border-b border-slate-700">
+        <input type="text" id="meeting-title-input"
+          class="text-lg font-semibold bg-transparent border-none outline-none text-white placeholder-slate-500 w-full"
+          placeholder="Meeting Title">
+        <button onclick="closeMeetingDetailModal()" class="p-1 hover:bg-slate-700 rounded-lg transition-colors">
+          <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Meeting Type Toggle -->
+      <div class="px-4 pt-4">
+        <div class="flex items-center gap-1 bg-slate-900 rounded-lg p-1 w-fit">
+          <button type="button" onclick="switchMeetingType('one-time')" id="meeting-type-onetime"
+            class="px-4 py-2 text-sm font-medium rounded-md transition-all bg-primary-500 text-white">
+            1 One-time
+          </button>
+          <button type="button" onclick="switchMeetingType('recurring')" id="meeting-type-recurring"
+            class="px-4 py-2 text-sm font-medium rounded-md transition-all text-slate-400 hover:text-white">
+            Recurring
+          </button>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
+        <!-- Date & Time -->
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-2">Date & Time</label>
+          <div class="grid grid-cols-3 gap-2">
+            <div class="relative">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              <input type="date" id="meeting-date-input"
+                class="w-full pl-10 pr-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:border-primary-500">
+            </div>
+            <div class="relative">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <input type="time" id="meeting-start-time-input"
+                class="w-full pl-10 pr-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:border-primary-500">
+            </div>
+            <div class="relative">
+              <input type="time" id="meeting-end-time-input"
+                class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:border-primary-500">
+            </div>
+          </div>
+        </div>
+
+        <!-- Location -->
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-2">Location</label>
+          <div class="relative">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <input type="text" id="meeting-location-input" placeholder="Enter location or meeting link"
+              class="w-full pl-10 pr-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:border-primary-500 placeholder-slate-500">
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-2">Status</label>
+          <select id="meeting-status-input"
+            class="appearance-none bg-primary-500/15 text-primary-400 text-sm font-medium px-3 py-1.5 rounded-lg border border-primary-500/30 outline-none cursor-pointer hover:opacity-80">
+            <option value="scheduled">Scheduled</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        <!-- Participants -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-sm font-medium text-slate-400">Participants</label>
+            <button type="button" onclick="toggleMeetingParticipantsDropdown()" class="text-xs text-primary-400 hover:text-primary-300">
+              + Add
+            </button>
+          </div>
+          <div id="meeting-participants-list" class="hidden bg-slate-900 rounded-lg border border-slate-700 max-h-40 overflow-y-auto">
+            <!-- Checkbox list will be rendered here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-between p-4 border-t border-slate-700 bg-slate-800/50">
+        <button onclick="deleteMeeting()" class="px-4 py-2 text-red-400 hover:text-red-300 font-medium text-sm transition-colors">
+          Delete
+        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="closeMeetingDetailModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg text-sm transition-colors">
+            Close
+          </button>
+          <button onclick="saveMeetingDetails()" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg text-sm transition-colors">
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- JavaScript Files -->
   <script src="js/api.js?v=20260228e"></script>
   <script src="js/notification.js?v=20260228e"></script>
@@ -506,10 +619,10 @@
       // Reuse global app from app.js (already exposed as window.app)
       window.app = window.app || new DigiHubApp();
       await app.init();
-      
+
       // Initialize view loader and wait for modals to load
       await viewLoader.init('view-container', 'modals-container');
-      
+
       // Register view callbacks
       viewLoader.onViewLoad('dashboard', initDashboard);
       viewLoader.onViewLoad('projects', initProjects);
@@ -521,10 +634,31 @@
       viewLoader.onViewLoad('reports', initReports);
       viewLoader.onViewLoad('settings', initSettings);
       viewLoader.onViewLoad('process-flow', initProcessFlowPage);
-      
-      // Navigate to initial page
-      navigateTo('dashboard');
-      
+
+      // Handle browser back/forward navigation
+      window.addEventListener('popstate', (event) => {
+        const hash = window.location.hash.replace('#', '') || 'dashboard';
+        console.log('[Nav] popstate to:', hash);
+
+        // Update sidebar active state
+        document.querySelectorAll('.nav-item').forEach(item => {
+          item.classList.remove('active', 'bg-primary-500/20', 'text-primary-400', 'border-primary-400');
+          item.classList.add('text-slate-400', 'hover:bg-slate-700/50', 'border-transparent');
+        });
+        const activeNav = document.querySelector(`.nav-item[data-page="${hash}"]`);
+        if (activeNav) {
+          activeNav.classList.remove('text-slate-400', 'hover:bg-slate-700/50', 'border-transparent');
+          activeNav.classList.add('active', 'bg-primary-500/20', 'text-primary-400', 'border-primary-400');
+        }
+
+        // Load the view
+        viewLoader.loadView(hash);
+      });
+
+      // Navigate to initial page based on URL hash
+      const initialHash = window.location.hash.replace('#', '') || 'dashboard';
+      navigateTo(initialHash);
+
       // Preload common views
       viewLoader.preloadViews(['dashboard', 'projects', 'tasks']);
     });

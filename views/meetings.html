@@ -355,43 +355,48 @@ input[type="time"]:hover::-webkit-calendar-picker-indicator{filter:invert(.8)}
         </div>
       </div>
     </div>
-    
-    <!-- Right Sidebar - Quick Stats -->
-    <div class="w-full lg:w-72">
-      <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 mb-4">
-        <h3 class="font-semibold text-white mb-4">Quick Stats</h3>
-        <div class="space-y-3">
-          <div class="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 bg-primary-500/20 rounded-lg flex items-center justify-center">
-                <svg class="w-4 h-4 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                </svg>
+
+    <!-- Right Sidebar -->
+    <div class="flex flex-col lg:flex-row gap-4 w-full lg:w-auto">
+      <!-- Quick Stats - 20% width -->
+      <div class="w-full lg:w-1/5 min-w-[180px]">
+        <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+          <h3 class="font-semibold text-white mb-4">Quick Stats</h3>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-primary-500/20 rounded-lg flex items-center justify-center">
+                  <svg class="w-4 h-4 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                </div>
+                <span class="text-sm text-slate-300">This Week</span>
               </div>
-              <span class="text-sm text-slate-300">This Week</span>
+              <span id="meeting-count-week" class="text-lg font-semibold text-white">0</span>
             </div>
-            <span id="meeting-count-week" class="text-lg font-semibold text-white">0</span>
-          </div>
-          <div class="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 bg-warning/20 rounded-lg flex items-center justify-center">
-                <svg class="w-4 h-4 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
+            <div class="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-warning/20 rounded-lg flex items-center justify-center">
+                  <svg class="w-4 h-4 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+                <span class="text-sm text-slate-300">Hours this month</span>
               </div>
-              <span class="text-sm text-slate-300">Hours this month</span>
+              <span id="meeting-hours-month" class="text-lg font-semibold text-white">0</span>
             </div>
-            <span id="meeting-hours-month" class="text-lg font-semibold text-white">0</span>
           </div>
         </div>
       </div>
-      
-      <!-- Upcoming Meetings Widget -->
-      <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
-        <h3 class="font-semibold text-white mb-4">Next Meeting</h3>
-        <div id="next-meeting-widget">
-          <div class="text-center py-4">
-            <p class="text-sm text-slate-400">No upcoming meetings</p>
+
+      <!-- Next Meeting - 80% width -->
+      <div class="w-full lg:w-4/5">
+        <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+          <h3 class="font-semibold text-white mb-4">Next Meeting</h3>
+          <div id="next-meeting-widget">
+            <div class="text-center py-4">
+              <p class="text-sm text-slate-400">No upcoming meetings</p>
+            </div>
           </div>
         </div>
       </div>
@@ -400,205 +405,127 @@ input[type="time"]:hover::-webkit-calendar-picker-indicator{filter:invert(.8)}
 
   <!-- Meeting Detail Modal -->
   <div id="meeting-detail-modal" class="fixed inset-0 z-50 hidden">
-  <div class="mtg-backdrop fixed inset-0 bg-slate-950/75 backdrop-blur-sm" onclick="closeMeetingDetailModal()"></div>
-  <div class="mtg-dialog fixed inset-0 overflow-y-auto">
-    <div class="flex min-h-full items-center justify-center p-4">
-      <div class="mtg-card relative w-full max-w-2xl max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
+    <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" onclick="closeMeetingDetailModal()"></div>
+    <div class="fixed inset-0 overflow-y-auto">
+      <div class="flex min-h-full items-center justify-center p-4">
+        <!-- Modal Card -->
+        <div class="w-full max-w-xl bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden" onclick="event.stopPropagation()">
 
-        <!-- Modal Header -->
-        <div class="flex items-center justify-between px-6 py-5 border-b border-slate-700/40">
-          <div class="flex-1 min-w-0">
-            <div
-              id="meeting-title-display"
-              contenteditable="true"
-              spellcheck="false"
-              tabindex="0"
-              class="meeting-inline-field text-xl font-semibold text-white outline-none rounded-lg px-2.5 py-1 -ml-2.5 border border-transparent hover:border-slate-600/60 focus:border-primary-500/70 focus:bg-slate-900/50 cursor-text"
-            >Meeting Title</div>
-            <p id="meeting-detail-subtitle" class="text-sm text-slate-500 mt-1.5 ml-0.5 flex items-center gap-1.5">
-              <svg class="w-3.5 h-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-              <span>One-time</span>
-            </p>
+          <!-- Header with Toggle -->
+          <div class="px-6 py-5 border-b border-slate-700/50">
+            <div class="flex items-center justify-between">
+              <!-- Toggle -->
+              <div class="flex items-center gap-1 bg-slate-900 rounded-lg p-1">
+                <button type="button" onclick="switchMeetingType('one-time')" id="meeting-type-onetime"
+                  class="px-4 py-2 text-sm font-medium rounded-md transition-all bg-primary-500 text-white">
+                  1 One-time
+                </button>
+                <button type="button" onclick="switchMeetingType('recurring')" id="meeting-type-recurring"
+                  class="px-4 py-2 text-sm font-medium rounded-md transition-all text-slate-400 hover:text-white">
+                  Recurring
+                </button>
+              </div>
+              <button onclick="closeMeetingDetailModal()" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Title -->
+            <input type="text" id="meeting-title-input"
+              class="w-full mt-4 bg-transparent text-xl font-semibold text-white outline-none placeholder-slate-500 border-b border-transparent hover:border-slate-600 focus:border-primary-500 pb-1"
+              placeholder="Meeting title...">
           </div>
-          <button onclick="closeMeetingDetailModal()" class="ml-4 flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-slate-700/60 transition-all duration-200">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
-        </div>
 
-        <!-- Modal Body -->
-        <div class="mtg-body px-6 py-5 overflow-y-auto max-h-[62vh]">
+          <!-- Body -->
+          <div class="px-6 py-5 space-y-5">
 
-          <!-- Date & Time Section -->
-          <div class="mtg-section">
-            <label class="mtg-label block">Date &amp; Time</label>
-            <div class="flex items-center gap-2 flex-wrap">
-              <input type="date" id="meeting-date-input" tabindex="1"
-                class="meeting-inline-field bg-slate-900/40 border border-slate-700/50 hover:border-slate-500/70 focus:border-primary-500/70 focus:bg-slate-900/60 rounded-lg px-3 py-1.5 text-white text-sm outline-none cursor-pointer">
-              <input type="time" id="meeting-start-time-input" tabindex="2"
-                class="meeting-inline-field bg-slate-900/40 border border-slate-700/50 hover:border-slate-500/70 focus:border-primary-500/70 focus:bg-slate-900/60 rounded-lg px-3 py-1.5 text-slate-300 text-sm outline-none">
-              <span class="text-slate-600 text-sm select-none font-medium">–</span>
-              <input type="time" id="meeting-end-time-input" tabindex="3"
-                class="meeting-inline-field bg-slate-900/40 border border-slate-700/50 hover:border-slate-500/70 focus:border-primary-500/70 focus:bg-slate-900/60 rounded-lg px-3 py-1.5 text-slate-300 text-sm outline-none">
-              <div class="relative">
-                <select id="meeting-duration-input" tabindex="4"
-                  class="meeting-inline-field appearance-none bg-slate-900/40 border border-slate-700/50 hover:border-slate-500/70 focus:border-primary-500/70 rounded-lg pl-3 pr-7 py-1.5 text-slate-300 text-sm outline-none cursor-pointer">
-                  <option value="15" class="bg-slate-800">15 min</option>
-                  <option value="30" class="bg-slate-800">30 min</option>
-                  <option value="45" class="bg-slate-800">45 min</option>
-                  <option value="60" class="bg-slate-800">1 hour</option>
-                  <option value="90" class="bg-slate-800">1.5 hours</option>
-                  <option value="120" class="bg-slate-800">2 hours</option>
-                  <option value="180" class="bg-slate-800">3 hours</option>
+            <!-- Date & Time -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Date & Time</label>
+              <div class="flex items-center gap-3 flex-wrap">
+                <div class="flex items-center gap-2 bg-slate-900/60 rounded-lg px-3 py-2 border border-slate-700/50">
+                  <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                  <input type="date" id="meeting-date-input"
+                    class="bg-transparent text-white text-sm outline-none w-32">
+                </div>
+                <div class="flex items-center gap-2 bg-slate-900/60 rounded-lg px-3 py-2 border border-slate-700/50">
+                  <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <input type="time" id="meeting-start-time-input"
+                    class="bg-transparent text-white text-sm outline-none w-20">
+                  <span class="text-slate-500">-</span>
+                  <input type="time" id="meeting-end-time-input"
+                    class="bg-transparent text-white text-sm outline-none w-20">
+                </div>
+                <span class="text-xs text-slate-500 px-2 py-1 bg-slate-900/40 rounded">UTC</span>
+              </div>
+            </div>
+
+            <!-- Location -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Location</label>
+              <input type="text" id="meeting-location-input" placeholder="Add location..."
+                class="w-full bg-slate-900/60 border border-slate-700/50 rounded-lg px-4 py-2.5 text-white text-sm outline-none focus:border-primary-500 placeholder-slate-500">
+            </div>
+
+            <!-- Status -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Status</label>
+              <div class="inline-flex">
+                <select id="meeting-status-input"
+                  class="appearance-none bg-primary-500/15 text-primary-400 text-sm font-medium px-3 py-1.5 rounded-lg border border-primary-500/30 outline-none cursor-pointer hover:bg-primary-500/20">
+                  <option value="scheduled" class="bg-slate-800">Scheduled</option>
+                  <option value="in_progress" class="bg-slate-800">In Progress</option>
+                  <option value="completed" class="bg-slate-800">Completed</option>
+                  <option value="cancelled" class="bg-slate-800">Cancelled</option>
                 </select>
-                <svg class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
               </div>
             </div>
-          </div>
 
-          <!-- Location & Status -->
-          <div class="mtg-section">
-            <div class="grid grid-cols-2 gap-x-6 gap-y-3">
-              <div>
-                <label class="mtg-label block">Location</label>
-                <input type="text" id="meeting-location-input" tabindex="5" placeholder="Add location…"
-                  class="meeting-inline-field w-full bg-slate-900/40 border border-slate-700/50 hover:border-slate-500/70 focus:border-primary-500/70 focus:bg-slate-900/60 rounded-lg px-3 py-1.5 text-white text-sm outline-none placeholder-slate-600">
+            <!-- Participants -->
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Participants</label>
+                <button type="button" onclick="toggleMeetingParticipantsDropdown()" class="text-xs text-primary-400 hover:text-primary-300">Add participant</button>
               </div>
-              <div>
-                <label class="mtg-label block">Status</label>
-                <div class="relative inline-flex">
-                  <select id="meeting-status-input" tabindex="6"
-                    class="meeting-status-badge">
-                    <option value="scheduled">Scheduled</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                  <svg class="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
-                </div>
+              <!-- Search -->
+              <div class="relative mb-2">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input type="text" id="meeting-participants-search" placeholder="Search members..."
+                  class="w-full bg-slate-900/60 border border-slate-700/50 rounded-lg pl-10 pr-4 py-2 text-white text-sm outline-none focus:border-primary-500 placeholder-slate-500">
+              </div>
+              <!-- Participants List -->
+              <div id="meeting-participants-list" class="space-y-1 max-h-40 overflow-y-auto">
+                <!-- Will be populated dynamically -->
               </div>
             </div>
+
           </div>
 
-          <!-- Participants -->
-          <div class="mtg-section">
-            <label class="mtg-label block">Participants</label>
-            <div class="relative">
-              <div id="meeting-detail-participants"
-                class="meeting-people-field flex flex-wrap items-center gap-1.5 min-h-[2.25rem] px-2.5 py-2 rounded-lg border border-slate-700/50 bg-slate-900/25 cursor-pointer"
-                onclick="toggleMeetingInlineDropdown('participants', event)">
-                <span class="text-sm text-slate-600 meeting-people-placeholder">+ Add participants</span>
-              </div>
-              <div id="participants-inline-dropdown"
-                class="mtg-inline-dropdown hidden absolute left-0 right-0 mt-1.5 z-20">
-                <div class="mtg-dropdown-card">
-                  <div class="p-2.5 border-b border-slate-700/40">
-                    <input type="text" placeholder="Search members…" oninput="filterMeetingDropdown('participants', this.value)"
-                      class="w-full bg-slate-800/80 border border-slate-700/50 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-primary-500/60 placeholder-slate-600 transition-colors">
-                  </div>
-                  <div id="participants-list-edit" class="max-h-[200px] overflow-y-auto p-1.5">
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Send Minutes To -->
-          <div class="mtg-section">
-            <label class="mtg-label block">Send minutes to</label>
-            <div class="relative">
-              <div id="meeting-detail-notifiees"
-                class="meeting-people-field flex flex-wrap items-center gap-1.5 min-h-[2.25rem] px-2.5 py-2 rounded-lg border border-slate-700/50 bg-slate-900/25 cursor-pointer"
-                onclick="toggleMeetingInlineDropdown('notifiees', event)">
-                <span class="text-sm text-slate-600 meeting-people-placeholder">+ Add recipients</span>
-              </div>
-              <div id="notifiees-inline-dropdown"
-                class="mtg-inline-dropdown hidden absolute left-0 right-0 mt-1.5 z-20">
-                <div class="mtg-dropdown-card">
-                  <div class="p-2.5 border-b border-slate-700/40">
-                    <input type="text" placeholder="Search members…" oninput="filterMeetingDropdown('notifiees', this.value)"
-                      class="w-full bg-slate-800/80 border border-slate-700/50 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-primary-500/60 placeholder-slate-600 transition-colors">
-                  </div>
-                  <div id="notifiees-list-edit" class="max-h-[200px] overflow-y-auto p-1.5">
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Meeting Minutes – rich text inline with embedded toolbar -->
-          <div>
-            <label class="mtg-label block">Meeting Minutes</label>
-            <div class="meeting-minutes-wrapper rounded-lg border border-slate-700/50 bg-slate-900/40 overflow-hidden">
-
-              <!-- Toolbar: slides down on hover/focus -->
-              <div id="minutes-rich-toolbar"
-                class="minutes-toolbar flex items-center gap-0.5 px-2 border-b bg-slate-900/80 opacity-0 pointer-events-none select-none">
-                <button type="button" onmousedown="event.preventDefault(); formatMeetingMinutes('bold')"
-                  class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-slate-700/70 text-slate-400 hover:text-white font-bold text-sm" title="Bold">B</button>
-                <button type="button" onmousedown="event.preventDefault(); formatMeetingMinutes('italic')"
-                  class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-slate-700/70 text-slate-400 hover:text-white italic text-sm" title="Italic">I</button>
-                <button type="button" onmousedown="event.preventDefault(); formatMeetingMinutes('underline')"
-                  class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-slate-700/70 text-slate-400 hover:text-white underline text-sm" title="Underline">U</button>
-                <button type="button" onmousedown="event.preventDefault(); formatMeetingMinutes('strikeThrough')"
-                  class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-slate-700/70 text-slate-500 hover:text-white line-through text-sm" title="Strikethrough">S</button>
-                <div class="w-px h-4 bg-slate-600/50 mx-1"></div>
-                <button type="button" onmousedown="event.preventDefault(); formatMeetingMinutes('formatBlock', 'h3')"
-                  class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-slate-700/70 text-slate-400 hover:text-white text-xs font-bold" title="Heading">H</button>
-                <button type="button" onmousedown="event.preventDefault(); formatMeetingMinutes('formatBlock', 'p')"
-                  class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-slate-700/70 text-slate-400 hover:text-white text-sm" title="Paragraph">¶</button>
-                <div class="w-px h-4 bg-slate-600/50 mx-1"></div>
-                <button type="button" onmousedown="event.preventDefault(); formatMeetingMinutes('insertUnorderedList')"
-                  class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-slate-700/70 text-slate-400 hover:text-white" title="Bullet list">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
-                </button>
-                <button type="button" onmousedown="event.preventDefault(); formatMeetingMinutes('insertOrderedList')"
-                  class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-slate-700/70 text-slate-400 hover:text-white" title="Numbered list">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20h14M7 12h14M7 4h14M3 20h.01M3 12h.01M3 4h.01"/></svg>
-                </button>
-                <div class="w-px h-4 bg-slate-600/50 mx-1"></div>
-                <button type="button" onmousedown="event.preventDefault(); formatMeetingMinutes('removeFormat')"
-                  class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-slate-700/70 text-slate-500 hover:text-white text-xs" title="Clear formatting">Tx</button>
-                <div class="flex-1"></div>
-                <button type="button" onclick="sendMeetingMinutes()"
-                  class="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-primary-400 hover:bg-primary-500/15 transition-colors">
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                  Send
-                </button>
-              </div>
-
-              <div
-                id="meeting-detail-minutes"
-                contenteditable="true"
-                tabindex="7"
-                data-placeholder="No meeting minutes yet. Click to add…"
-                class="minutes-editable p-4 min-h-[140px] text-sm text-slate-300 outline-none leading-relaxed"
-              ></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Modal Footer -->
-        <div class="flex items-center justify-between px-6 py-4 border-t border-slate-700/30 bg-slate-900/20">
-          <button onclick="deleteMeeting()" class="mtg-btn-delete px-3 py-1.5 text-red-400 hover:text-red-300 rounded-lg text-sm font-medium">
-            <span class="flex items-center gap-1.5">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          <!-- Footer -->
+          <div class="flex items-center justify-between px-6 py-4 border-t border-slate-700/50 bg-slate-900/30">
+            <button onclick="deleteMeeting()" class="px-4 py-2 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg text-sm font-medium transition-colors">
               Delete
-            </span>
-          </button>
-          <div class="flex items-center gap-2.5">
-            <button onclick="closeMeetingDetailModal()" class="mtg-footer-btn px-4 py-2 bg-slate-700/60 hover:bg-slate-600/70 text-slate-300 hover:text-white rounded-lg text-sm font-medium border border-slate-600/30 hover:border-slate-500/40">
-              Close
             </button>
-            <button onclick="saveMeetingDetails()" class="mtg-footer-btn mtg-btn-save px-5 py-2 text-white rounded-lg text-sm font-semibold">
-              Save Changes
-            </button>
+            <div class="flex items-center gap-2">
+              <button onclick="closeMeetingDetailModal()" class="px-4 py-2 bg-white text-slate-800 hover:bg-slate-100 rounded-lg text-sm font-medium transition-colors">
+                Close
+              </button>
+              <button onclick="saveMeetingDetails()" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-medium transition-colors">
+                Save Changes
+              </button>
+            </div>
           </div>
-        </div>
 
+        </div>
       </div>
     </div>
   </div>
-  </div><!-- /meeting-detail-modal -->
 </div><!-- /meetings-page -->

@@ -338,24 +338,23 @@ class MeetingsManager {
     }
   }
 
+  // Close meeting detail modal
+  closeMeetingDetailModal() {
+    document.getElementById('meeting-detail-modal')?.classList.add('hidden');
+    this.currentMeeting = null;
+  }
+
   // Render meeting detail
   renderMeetingDetail(meeting) {
     const startDate = new Date(meeting.startTime);
     const endDate = new Date(meeting.endTime);
-    const durationMinutes = Math.round((endDate - startDate) / 60000);
 
-    // Title (contenteditable)
-    const titleDisplay = document.getElementById('meeting-title-display');
-    if (titleDisplay) titleDisplay.textContent = meeting.title;
+    // Title (input)
+    const titleInput = document.getElementById('meeting-title-input');
+    if (titleInput) titleInput.value = meeting.title || '';
 
-    // Subtitle
-    const subtitleEl = document.getElementById('meeting-detail-subtitle');
-    if (subtitleEl) {
-      const subtitleText = meeting.isRecurring
-        ? `Recurring • ${meeting.recurrencePattern || 'Weekly'}`
-        : 'One-time';
-      subtitleEl.querySelector('span').textContent = subtitleText;
-    }
+    // Switch meeting type toggle
+    this._updateMeetingTypeToggle(meeting.isRecurring);
 
     // Date & Time
     const dateInput = document.getElementById('meeting-date-input');
@@ -364,19 +363,6 @@ class MeetingsManager {
     if (dateInput) dateInput.value = startDate.toISOString().split('T')[0];
     if (startTimeInput) startTimeInput.value = startDate.toTimeString().slice(0, 5);
     if (endTimeInput) endTimeInput.value = endDate.toTimeString().slice(0, 5);
-
-    // Duration — pick nearest option, or add it dynamically
-    const durationInput = document.getElementById('meeting-duration-input');
-    if (durationInput) {
-      // Try to select exact match; if not found, add a custom option
-      const existing = Array.from(durationInput.options).find(o => parseInt(o.value) === durationMinutes);
-      if (!existing) {
-        const opt = new Option(`${durationMinutes} min`, durationMinutes, true, true);
-        opt.className = 'bg-slate-800';
-        durationInput.add(opt, 0);
-      }
-      durationInput.value = durationMinutes;
-    }
 
     // Location
     const locationInput = document.getElementById('meeting-location-input');
@@ -387,166 +373,101 @@ class MeetingsManager {
     if (statusInput) {
       statusInput.value = meeting.status || 'scheduled';
       this._applyStatusColor(statusInput);
+      // Add listener
+      if (!statusInput._colorListenerAdded) {
+        statusInput.addEventListener('change', () => this._applyStatusColor(statusInput));
+        statusInput._colorListenerAdded = true;
+      }
     }
 
-    // Participants chips + inline dropdown
-    this._renderPeopleField('participants', meeting.participants || []);
+    // Participants - render as simple list
+    this._renderParticipantsList(meeting.participants || []);
+  }
 
-    // Notifiees chips + inline dropdown
-    this._renderPeopleField('notifiees', meeting.notifiees || []);
+  // Update meeting type toggle
+  _updateMeetingTypeToggle(isRecurring) {
+    const oneTimeBtn = document.getElementById('meeting-type-onetime');
+    const recurringBtn = document.getElementById('meeting-type-recurring');
 
-    // Meeting minutes (contenteditable)
-    const minutesEl = document.getElementById('meeting-detail-minutes');
-    if (minutesEl) {
-      minutesEl.innerHTML = meeting.minutes || '';
+    if (isRecurring) {
+      if (oneTimeBtn) {
+        oneTimeBtn.classList.remove('bg-primary-500', 'text-white');
+        oneTimeBtn.classList.add('text-slate-400', 'hover:text-white');
+      }
+      if (recurringBtn) {
+        recurringBtn.classList.add('bg-primary-500', 'text-white');
+        recurringBtn.classList.remove('text-slate-400', 'hover:text-white');
+      }
+    } else {
+      if (oneTimeBtn) {
+        oneTimeBtn.classList.add('bg-primary-500', 'text-white');
+        oneTimeBtn.classList.remove('text-slate-400', 'hover:text-white');
+      }
+      if (recurringBtn) {
+        recurringBtn.classList.remove('bg-primary-500', 'text-white');
+        recurringBtn.classList.add('text-slate-400', 'hover:text-white');
+      }
     }
-
-    // Attach status-color update on change
-    if (statusInput && !statusInput._colorListenerAdded) {
-      statusInput.addEventListener('change', () => this._applyStatusColor(statusInput));
-      statusInput._colorListenerAdded = true;
-    }
   }
 
-  // Build chip HTML for a single person
-  _chipHtml(type, person) {
-    const colors = [
-      'from-indigo-400 to-indigo-600','from-violet-400 to-violet-600',
-      'from-sky-400 to-sky-600','from-emerald-400 to-emerald-600',
-      'from-amber-400 to-amber-600','from-rose-400 to-rose-600'
-    ];
-    const colorIdx = person.name.charCodeAt(0) % colors.length;
-    return `
-      <div class="people-chip" data-id="${person.id}" data-type="${type}">
-        <div class="chip-avatar bg-gradient-to-br ${colors[colorIdx]}">
-          ${this.getInitials(person.name)}
-        </div>
-        <span>${person.name}</span>
-        <button type="button" class="chip-remove"
-                onclick="event.stopPropagation(); meetingsManager._removePerson('${type}', '${person.id}')" title="Remove">
-          <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-        </button>
-      </div>`;
-  }
-
-  // Remove a person directly when clicking ×
-  _removePerson(type, memberId) {
-    if (!this.currentMeeting) return;
-    const arr = type === 'participants'
-      ? (this.currentMeeting.participants = this.currentMeeting.participants || [])
-      : (this.currentMeeting.notifiees = this.currentMeeting.notifiees || []);
-    const idx = arr.findIndex(p => String(p.id) === String(memberId));
-    if (idx !== -1) arr.splice(idx, 1);
-    // Uncheck the corresponding checkbox in dropdown
-    const cb = document.querySelector(
-      `#${type === 'participants' ? 'participants' : 'notifiees'}-list-edit input[value="${memberId}"]`
-    );
-    if (cb) cb.checked = false;
-    this._renderChipsOnly(type, arr);
-  }
-
-  // Re-render only the chip area (not the dropdown list)
-  _renderChipsOnly(type, people) {
-    const chipContainer = document.getElementById(
-      type === 'participants' ? 'meeting-detail-participants' : 'meeting-detail-notifiees'
-    );
-    if (!chipContainer) return;
-    const addLabel = type === 'participants' ? 'Add participant' : 'Add recipient';
-    const chipsHtml = people.map(p => this._chipHtml(type, p)).join('');
-    const addBtn = `<button type="button" class="people-add-btn"
-      onclick="event.stopPropagation(); toggleMeetingInlineDropdown('${type}', event)">
-      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-      ${addLabel}
-    </button>`;
-    chipContainer.innerHTML = chipsHtml + addBtn;
-  }
-
-  // Render chips + checkbox list for participants / notifiees
-  _renderPeopleField(type, people) {
-    const chipContainer = document.getElementById(
-      type === 'participants' ? 'meeting-detail-participants' : 'meeting-detail-notifiees'
-    );
-    const listContainer = document.getElementById(
-      type === 'participants' ? 'participants-list-edit' : 'notifiees-list-edit'
-    );
-    if (!chipContainer || !listContainer) return;
+  // Render participants as simple list
+  _renderParticipantsList(participants) {
+    const container = document.getElementById('meeting-participants-list');
+    if (!container) return;
 
     const teamMembers = (window.app && app.state && app.state.teamMembers) || [];
 
-    // Render chips + persistent Add button
-    const addLabel = type === 'participants' ? 'Add participant' : 'Add recipient';
-    const chipsHtml = people.map(p => this._chipHtml(type, p)).join('');
-    const addBtn = `<button type="button" class="people-add-btn"
-      onclick="event.stopPropagation(); toggleMeetingInlineDropdown('${type}', event)">
-      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-      ${addLabel}
-    </button>`;
-    chipContainer.innerHTML = chipsHtml + addBtn;
-
-    // Render checkbox list
     if (teamMembers.length === 0) {
-      listContainer.innerHTML = '<p class="text-xs text-slate-500 p-3">No team members available</p>';
+      container.innerHTML = '<p class="text-sm text-slate-500 p-3">No team members available</p>';
       return;
     }
-    const selectedIds = new Set(people.map(p => String(p.id)));
-    listContainer.innerHTML = teamMembers.map(member => {
+
+    const selectedIds = new Set(participants.map(p => String(p.id)));
+
+    container.innerHTML = teamMembers.map(member => {
       const fullName = `${member.firstName} ${member.lastName}`;
       const checked = selectedIds.has(String(member.id));
-      const colors = ['from-indigo-400 to-indigo-600','from-violet-400 to-violet-600',
-        'from-sky-400 to-sky-600','from-emerald-400 to-emerald-600',
-        'from-amber-400 to-amber-600','from-rose-400 to-rose-600'];
+      const colors = ['bg-indigo-500', 'bg-violet-500', 'bg-sky-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500'];
       const ci = fullName.charCodeAt(0) % colors.length;
+
       return `
-        <label class="mtg-member-row ${checked ? 'selected' : ''}">
-          <div class="mtg-member-avatar bg-gradient-to-br ${colors[ci]}">
-            ${this.getInitials(fullName)}
-            ${checked ? '<div class="mtg-member-check"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></div>' : ''}
+        <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/30 cursor-pointer transition-colors">
+          <div class="relative">
+            <div class="w-8 h-8 rounded-full ${colors[ci]} flex items-center justify-center text-white text-xs font-semibold">
+              ${this.getInitials(fullName)}
+            </div>
+            ${checked ? '<div class="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-primary-500 rounded-full flex items-center justify-center"><svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></div>' : ''}
           </div>
           <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-white truncate">${fullName}</p>
             ${member.email ? `<p class="text-xs text-slate-500 truncate">${member.email}</p>` : ''}
           </div>
-          <input type="checkbox" value="${member.id}" data-name="${fullName}" data-type="${type}"
+          <input type="checkbox" value="${member.id}" data-name="${fullName}" data-type="participants"
             ${checked ? 'checked' : ''}
-            onchange="meetingsManager._onPeopleCheckboxChange('${type}', this)"
-            class="mtg-checkbox">
+            onchange="meetingsManager._onParticipantCheckboxChange(this)"
+            class="w-4 h-4 rounded border-slate-600 bg-slate-700 text-primary-500 focus:ring-primary-500 focus:ring-offset-0">
         </label>
       `;
     }).join('');
   }
 
-  // Handle checkbox change in inline people dropdown
-  _onPeopleCheckboxChange(type, checkbox) {
+  // Handle participant checkbox change
+  _onParticipantCheckboxChange(checkbox) {
     if (!this.currentMeeting) return;
+
+    this.currentMeeting.participants = this.currentMeeting.participants || [];
     const memberId = checkbox.value;
     const memberName = checkbox.dataset.name;
-    const arr = type === 'participants'
-      ? (this.currentMeeting.participants = this.currentMeeting.participants || [])
-      : (this.currentMeeting.notifiees = this.currentMeeting.notifiees || []);
 
     if (checkbox.checked) {
-      if (!arr.some(p => String(p.id) === String(memberId))) {
-        arr.push({ id: memberId, name: memberName });
-      }
+      this.currentMeeting.participants.push({ id: memberId, name: memberName });
     } else {
-      const idx = arr.findIndex(p => String(p.id) === String(memberId));
-      if (idx !== -1) arr.splice(idx, 1);
+      const idx = this.currentMeeting.participants.findIndex(p => String(p.id) === String(memberId));
+      if (idx !== -1) this.currentMeeting.participants.splice(idx, 1);
     }
-    // Update checked indicator badge on the avatar
-    const label = checkbox.closest('label');
-    if (label) {
-      const existing = label.querySelector('.mtg-member-check');
-      if (checkbox.checked && !existing) {
-        label.querySelector('.mtg-member-avatar')?.insertAdjacentHTML('beforeend',
-          '<div class="mtg-member-check"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></div>'
-        );
-        label.classList.add('selected');
-      } else if (!checkbox.checked && existing) {
-        existing.remove();
-        label.classList.remove('selected');
-      }
-    }
-    this._renderChipsOnly(type, arr);
+
+    // Re-render to update checkmarks
+    this._renderParticipantsList(this.currentMeeting.participants);
   }
 
   // Apply color class to status badge-select
@@ -682,9 +603,13 @@ class MeetingsManager {
 
     const meeting = meetingsManager.currentMeeting;
 
-    // Title (contenteditable)
-    const titleEl = document.getElementById('meeting-title-display');
-    if (titleEl) meeting.title = titleEl.textContent.trim() || meeting.title;
+    // Title (input)
+    const titleInput = document.getElementById('meeting-title-input');
+    if (titleInput) meeting.title = titleInput.value.trim() || meeting.title;
+
+    // Meeting type (from toggle)
+    const oneTimeBtn = document.getElementById('meeting-type-onetime');
+    meeting.isRecurring = oneTimeBtn && !oneTimeBtn.classList.contains('bg-primary-500');
 
     // Date & Time
     const dateInput = document.getElementById('meeting-date-input');
@@ -697,13 +622,6 @@ class MeetingsManager {
       meeting.endTime = new Date(`${dateInput.value}T${endTimeInput.value}`).toISOString();
     }
 
-    // Duration overrides end time
-    const durationInput = document.getElementById('meeting-duration-input');
-    if (durationInput?.value && meeting.startTime) {
-      const durationMinutes = parseInt(durationInput.value);
-      meeting.endTime = new Date(new Date(meeting.startTime).getTime() + durationMinutes * 60000).toISOString();
-    }
-
     // Location
     const locationInput = document.getElementById('meeting-location-input');
     if (locationInput) meeting.location = locationInput.value;
@@ -712,22 +630,16 @@ class MeetingsManager {
     const statusInput = document.getElementById('meeting-status-input');
     if (statusInput) meeting.status = statusInput.value;
 
-    // Meeting minutes (contenteditable rich text)
-    const minutesEl = document.getElementById('meeting-detail-minutes');
-    if (minutesEl) {
-      const rawHtml = minutesEl.innerHTML.trim();
-      meeting.minutes = (rawHtml === '' || !rawHtml) ? '' : rawHtml;
-    }
-
-    // Participants & notifiees are already kept up-to-date via checkbox listeners
+    // Participants - already updated via checkboxes
 
     try {
       await api.updateMeeting(meeting.id, meeting);
-      showToast('Meeting updated successfully', 'success');
-      await meetingsManager.loadMeetings();
+      showToast('Meeting saved successfully', 'success');
       meetingsManager.closeMeetingDetailModal();
+      await meetingsManager.loadMeetings();
     } catch (error) {
-      showToast('Failed to update meeting', 'error');
+      console.error('Failed to save meeting:', error);
+      showToast('Failed to save meeting', 'error');
     }
   }
 
@@ -992,6 +904,38 @@ async function createRecurringMeeting(event) {
 // Meeting detail modal functions
 function closeMeetingDetailModal() {
   meetingsManager.closeMeetingDetailModal();
+}
+
+function switchMeetingType(type) {
+  const oneTimeBtn = document.getElementById('meeting-type-onetime');
+  const recurringBtn = document.getElementById('meeting-type-recurring');
+
+  if (type === 'one-time') {
+    if (oneTimeBtn) {
+      oneTimeBtn.classList.add('bg-primary-500', 'text-white');
+      oneTimeBtn.classList.remove('text-slate-400', 'hover:text-white');
+    }
+    if (recurringBtn) {
+      recurringBtn.classList.remove('bg-primary-500', 'text-white');
+      recurringBtn.classList.add('text-slate-400', 'hover:text-white');
+    }
+  } else {
+    if (oneTimeBtn) {
+      oneTimeBtn.classList.remove('bg-primary-500', 'text-white');
+      oneTimeBtn.classList.add('text-slate-400', 'hover:text-white');
+    }
+    if (recurringBtn) {
+      recurringBtn.classList.add('bg-primary-500', 'text-white');
+      recurringBtn.classList.remove('text-slate-400', 'hover:text-white');
+    }
+  }
+}
+
+function toggleMeetingParticipantsDropdown() {
+  const list = document.getElementById('meeting-participants-list');
+  if (list) {
+    list.classList.toggle('hidden');
+  }
 }
 
 function editMeetingParticipants() {

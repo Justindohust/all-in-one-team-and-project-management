@@ -681,7 +681,7 @@ let projectName = '';
 let projectColor = '#6366f1';
 
 // ================================================================
-// INIT — read query params and load from localStorage
+// INIT — read query params and load from API/localStorage
 // ================================================================
 (function init() {
     const params = new URLSearchParams(window.location.search);
@@ -693,10 +693,56 @@ let projectColor = '#6366f1';
     document.getElementById('project-dot').style.background = projectColor;
     document.title = `Process Flow – ${projectName}`;
 
-    loadFromStorage();
+    // Load from API first, then fall back to localStorage
+    loadFromAPI();
 })();
 
 function storageKey() { return `pf_diagram_${projectId}`; }
+
+// Load from API - primary source
+async function loadFromAPI() {
+    try {
+        const token = localStorage.getItem('digihub_token');
+        if (!token) {
+            console.log('[ProcessFlow] No token, using localStorage');
+            loadFromStorage();
+            return;
+        }
+
+        const response = await fetch(`/api/process-flow/project/${projectId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data) {
+                const { modulesConfig: mc, moduleData: md, connectionData: cd, moduleConnections: mconn } = result.data;
+
+                // Only use API data if it has content
+                if (mc && (mc.length > 0 || Object.keys(md || {}).length > 0 || Object.keys(cd || {}).length > 0)) {
+                    console.log('[ProcessFlow] Loaded from API');
+                    modulesConfig = mc || [];
+                    moduleData = md || {};
+                    connectionData = cd || {};
+                    window._pendingModuleConnections = mconn || [];
+
+                    // Also save to localStorage as backup
+                    saveToStorage();
+                    renderModules();
+                    return;
+                }
+            }
+        }
+    } catch(e) {
+        console.warn('[ProcessFlow] API load failed, trying localStorage:', e.message);
+    }
+
+    // Fall back to localStorage if API fails or returns empty
+    loadFromStorage();
+}
 
 function loadFromStorage() {
     try {
@@ -722,6 +768,47 @@ function saveToStorage() {
             savedAt: new Date().toISOString()
         }));
     } catch(e) { console.warn('[Storage] Save failed', e); }
+}
+
+// Save to API - primary storage
+async function saveToAPI() {
+    try {
+        const token = localStorage.getItem('digihub_token');
+        if (!token) {
+            console.log('[ProcessFlow] No token, saving to localStorage only');
+            saveToStorage();
+            return;
+        }
+
+        const response = await fetch(`/api/process-flow/project/${projectId}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                modulesConfig,
+                moduleData,
+                connectionData,
+                moduleConnections: window._canvas?.moduleConnections || []
+            })
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+                console.log('[ProcessFlow] Saved to API');
+                // Also keep localStorage as backup
+                saveToStorage();
+                return;
+            }
+        }
+    } catch(e) {
+        console.warn('[ProcessFlow] API save failed:', e.message);
+    }
+
+    // Fall back to localStorage
+    saveToStorage();
 }
 
 // ================================================================
@@ -860,14 +947,18 @@ class InfiniteCanvas {
         document.getElementById('btn-import-json').addEventListener('click', () => this.showImportModal());
         document.getElementById('import-json-input').addEventListener('change', e => this.handleImportFile(e));
         document.getElementById('btn-back').addEventListener('click', () => {
-            // If opened via window.open, close the tab; otherwise go back in history
-            // If neither works, navigate to the main app
-            if (window.opener) {
-                window.close();
+            // Try to return to the stored Process Flow page URL first
+            const returnUrl = sessionStorage.getItem('processFlowReturnUrl');
+            if (returnUrl) {
+                sessionStorage.removeItem('processFlowReturnUrl');
+                sessionStorage.removeItem('processFlowProjectId');
+                window.location.href = returnUrl;
             } else if (history.length > 1) {
+                // Try to go back in history
                 history.back();
             } else {
-                window.location.href = '/';
+                // Fall back to Process Flow page (not home)
+                window.location.href = '/#process-flow';
             }
         });
         document.getElementById('btn-add-connection').addEventListener('click', () => {
@@ -1891,7 +1982,7 @@ class InfiniteCanvas {
         renderModules();
         this.clearAllConnections(); requestAnimationFrame(() => this.drawModuleConnections());
         this.showDefaultPanel(); this.hideToolbar();
-        saveToStorage();
+        saveToAPI();
     }
 
     _updateHistoryBtns() {
@@ -1901,15 +1992,17 @@ class InfiniteCanvas {
 
     autoSave() {
         clearTimeout(this._autoSaveTimer);
-        this._autoSaveTimer = setTimeout(() => { saveToStorage(); }, 800);
+        this._autoSaveTimer = setTimeout(() => { saveToAPI(); }, 800);
     }
 
-    save() {
+    async save() {
         if (this.isSaving) return;
         this.isSaving = true;
         const btn = document.getElementById('btn-save'); const orig = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...'; btn.disabled = true;
-        saveToStorage();
+
+        await saveToAPI();
+
         setTimeout(() => {
             btn.innerHTML = '<i class="fas fa-check"></i> Đã lưu!';
             btn.style.background = 'rgba(39,174,96,0.5)';
@@ -2011,7 +2104,7 @@ class InfiniteCanvas {
         this.moduleConnections = JSON.parse(JSON.stringify(data.moduleConnections||[]));
         renderModules(); this.clearSelection(); this.clearAllConnections(); this.drawModuleConnections();
         this.history = []; this.historyIndex = -1; this.saveToHistory();
-        saveToStorage(); alert('✅ Import thành công!');
+        saveToAPI(); alert('✅ Import thành công!');
     }
 }
 

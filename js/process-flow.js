@@ -130,15 +130,15 @@ function openProcessFlowEditor(projectId) {
 
   console.log('[ProcessFlow] Opening editor for project:', projectId, project.name);
 
+  // Store the return URL so we can go back to Process Flow page
+  const returnUrl = window.location.href;
+  sessionStorage.setItem('processFlowReturnUrl', returnUrl);
+  sessionStorage.setItem('processFlowProjectId', projectId);
+
   const url = `/process-flow-editor.html?projectId=${encodeURIComponent(projectId)}&projectName=${encodeURIComponent(project.name)}&projectColor=${encodeURIComponent(project.color || '#6366f1')}`;
-  // Open in new tab — use link click to avoid popup blockers
-  const a = document.createElement('a');
-  a.href = url;
-  a.target = '_blank';
-  a.rel = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+
+  // Navigate in the same tab
+  window.location.href = url;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

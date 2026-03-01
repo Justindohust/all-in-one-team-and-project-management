@@ -195,6 +195,12 @@ const viewLoader = new ViewLoader();
 // Navigation function using view loader
 function navigateTo(pageId) {
   console.log('[Nav] navigateTo', pageId);
+
+  // Update URL hash for browser history support
+  if (window.location.hash !== `#${pageId}`) {
+    history.pushState({ page: pageId }, '', `#${pageId}`);
+  }
+
   // Update sidebar active state
   document.querySelectorAll('.nav-item').forEach(item => {
     item.classList.remove('active', 'bg-primary-500/20', 'text-primary-400', 'border-primary-400');
@@ -220,7 +226,7 @@ function navigateTo(pageId) {
     meetings: 'Meetings',
     'process-flow': 'Process Flow'
   };
-  
+
   const titleElement = document.getElementById('page-title');
   if (titleElement) {
     titleElement.textContent = pageTitles[pageId] || 'Dashboard';

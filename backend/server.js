@@ -45,6 +45,7 @@ app.use('/api/team', require('./routes/team'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/activities', require('./routes/activities'));
+app.use('/api/process-flow', require('./routes/processFlow'));
 
 // Health check
 app.get('/api/health', (req, res) => {
