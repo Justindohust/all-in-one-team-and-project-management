@@ -444,7 +444,413 @@ class SystemDiagramController(http.Controller):
 
 ---
 
-## Tóm tắt luồng dữ liệu
+# PHỤ LỤC: Tích hợp Process Flow với DigiHub Backend (PostgreSQL)
+
+## Tổng quan
+
+Tài liệu này ghi lại các thay đổi để tích hợp Process Flow Editor với database của DigiHub MES thay vì chỉ lưu localStorage. Được thực hiện vào ngày 20/02/2026.
+
+---
+
+## 1. Database Migration
+
+Tạo bảng mới `process_flow_diagrams` để lưu trữ dữ liệu sơ đồ theo project.
+
+**File:** `backend/database/20260220000001-add-process-flow-diagrams.sql`
+
+```sql
+-- Migration: Add Process Flow Diagrams Table
+-- This stores the visual process flow diagram data per project
+
+-- =====================
+-- PROCESS FLOW DIAGRAMS Table
+-- =====================
+CREATE TABLE IF NOT EXISTS process_flow_diagrams (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE UNIQUE,
+    modules_config JSONB DEFAULT '[]'::jsonb,
+    module_data JSONB DEFAULT '{}'::jsonb,
+    connection_data JSONB DEFAULT '{}'::jsonb,
+    module_connections JSONB DEFAULT '[]'::jsonb,
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create index for faster lookups
+CREATE INDEX IF NOT EXISTS idx_process_flow_diagrams_project_id ON process_flow_diagrams(project_id);
+
+-- Add comment for documentation
+COMMENT ON TABLE process_flow_diagrams IS 'Stores visual process flow diagram data (modules, positions, connections) for each project';
+COMMENT ON COLUMN process_flow_diagrams.modules_config IS 'Array of module configurations with position, style, submodules';
+COMMENT ON COLUMN process_flow_diagrams.module_data IS 'Mapping of module ID to its data';
+COMMENT ON COLUMN process_flow_diagrams.connection_data IS 'Mapping of submodule codes to connections';
+COMMENT ON COLUMN process_flow_diagrams.module_connections IS 'Array of module-to-module connections';
+```
+
+**Chạy migration:**
+```bash
+psql -U your_username -d digihub -f backend/database/20260220000001-add-process-flow-diagrams.sql
+```
+
+---
+
+## 2. API Routes
+
+Tạo API endpoints để load/save diagram từ database.
+
+**File:** `backend/routes/processFlow.js`
+
+```javascript
+/**
+ * Process Flow Diagram API Routes
+ * Handles saving and loading process flow diagrams for projects
+ */
+
+const express = require('express');
+const router = express.Router();
+const db = require('../config/database');
+const auth = require('../middleware/auth');
+
+// Get diagram for a project
+router.get('/project/:projectId', auth, async (req, res) => {
+  try {
+    const { projectId } = req.params;
+
+    const result = await db.query(
+      `SELECT * FROM process_flow_diagrams WHERE project_id = $1`,
+      [projectId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          modulesConfig: [],
+          moduleData: {},
+          connectionData: {},
+          moduleConnections: []
+        }
+      });
+    }
+
+    const diagram = result.rows[0];
+    res.json({
+      success: true,
+      data: {
+        modulesConfig: diagram.modules_config || [],
+        moduleData: diagram.module_data || {},
+        connectionData: diagram.connection_data || {},
+        moduleConnections: diagram.module_connections || []
+      }
+    });
+  } catch (error) {
+    console.error('Get process flow diagram error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch process flow diagram'
+    });
+  }
+});
+
+// Save diagram for a project
+router.post('/project/:projectId', auth, async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const { modulesConfig, moduleData, connectionData, moduleConnections } = req.body;
+
+    // Check if diagram already exists
+    const existing = await db.query(
+      `SELECT id FROM process_flow_diagrams WHERE project_id = $1`,
+      [projectId]
+    );
+
+    let result;
+    if (existing.rows.length > 0) {
+      // Update existing
+      result = await db.query(
+        `UPDATE process_flow_diagrams SET
+          modules_config = $1,
+          module_data = $2,
+          connection_data = $3,
+          module_connections = $4,
+          updated_at = CURRENT_TIMESTAMP
+         WHERE project_id = $5
+         RETURNING *`,
+        [modulesConfig, moduleData, connectionData, moduleConnections, projectId]
+      );
+    } else {
+      // Insert new
+      result = await db.query(
+        `INSERT INTO process_flow_diagrams (
+          project_id, modules_config, module_data, connection_data, module_connections, created_by
+         ) VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING *`,
+        [projectId, modulesConfig, moduleData, connectionData, moduleConnections, req.user.id]
+      );
+    }
+
+    res.json({
+      success: true,
+      data: result.rows[0],
+      message: 'Process flow diagram saved successfully'
+    });
+  } catch (error) {
+    console.error('Save process flow diagram error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to save process flow diagram'
+    });
+  }
+});
+
+// Delete diagram for a project
+router.delete('/project/:projectId', auth, async (req, res) => {
+  try {
+    const { projectId } = req.params;
+
+    await db.query(
+      `DELETE FROM process_flow_diagrams WHERE project_id = $1`,
+      [projectId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Process flow diagram deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete process flow diagram error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete process flow diagram'
+    });
+  }
+});
+
+module.exports = router;
+```
+
+**Đăng ký route trong server.js:**
+```javascript
+// Thêm vào backend/server.js
+app.use('/api/process-flow', require('./routes/processFlow'));
+```
+
+---
+
+## 3. Frontend - Process Flow Editor
+
+Cập nhật `process-flow-editor.html` để sử dụng API thay vì chỉ localStorage.
+
+### 3.1 Load từ API (ưu tiên) → Fallback localStorage
+
+```javascript
+// Load from API - primary source
+async function loadFromAPI() {
+    try {
+        const token = localStorage.getItem('digihub_token');
+        if (!token) {
+            console.log('[ProcessFlow] No token, using localStorage');
+            loadFromStorage();
+            return;
+        }
+
+        const response = await fetch(`/api/process-flow/project/${projectId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data) {
+                const { modulesConfig: mc, moduleData: md, connectionData: cd, moduleConnections: mconn } = result.data;
+
+                // Only use API data if it has content
+                if (mc && (mc.length > 0 || Object.keys(md || {}).length > 0 || Object.keys(cd || {}).length > 0)) {
+                    console.log('[ProcessFlow] Loaded from API');
+                    modulesConfig = mc || [];
+                    moduleData = md || {};
+                    connectionData = cd || {};
+                    window._pendingModuleConnections = mconn || [];
+
+                    // Also save to localStorage as backup
+                    saveToStorage();
+                    renderModules();
+                    return;
+                }
+            }
+        }
+    } catch(e) {
+        console.warn('[ProcessFlow] API load failed, trying localStorage:', e.message);
+    }
+
+    // Fall back to localStorage if API fails or returns empty
+    loadFromStorage();
+}
+```
+
+### 3.2 Save to API (ưu tiên) → Fallback localStorage
+
+```javascript
+// Save to API - primary storage
+async function saveToAPI() {
+    try {
+        const token = localStorage.getItem('digihub_token');
+        if (!token) {
+            console.log('[ProcessFlow] No token, saving to localStorage only');
+            saveToStorage();
+            return;
+        }
+
+        const response = await fetch(`/api/process-flow/project/${projectId}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                modulesConfig,
+                moduleData,
+                connectionData,
+                moduleConnections: window._canvas?.moduleConnections || []
+            })
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+                console.log('[ProcessFlow] Saved to API');
+                // Also keep localStorage as backup
+                saveToStorage();
+                return;
+            }
+        }
+    } catch(e) {
+        console.warn('[ProcessFlow] API save failed:', e.message);
+    }
+
+    // Fall back to localStorage
+    saveToStorage();
+}
+```
+
+### 3.3 Cập nhật các hàm gọi save
+
+Cập nhật các vị trí gọi save trong InfiniteCanvas class:
+
+| Hàm | Trước | Sau |
+|-----|-------|-----|
+| `autoSave()` | `saveToStorage()` | `saveToAPI()` |
+| `save()` | `saveToStorage()` | `await saveToAPI()` |
+| `restoreState()` | `saveToStorage()` | `saveToAPI()` |
+| `handleImportFile()` | `saveToStorage()` | `saveToAPI()` |
+
+---
+
+## 4. Luồng dữ liệu
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                  Process Flow Editor (Frontend)                │
+│                                                                  │
+│  1. Init → loadFromAPI()                                        │
+│        ↓                                                         │
+│     API call → /api/process-flow/project/:projectId           │
+│        ↓                                                         │
+│     Nếu có data → Dùng data từ API                             │
+│     Nếu không có  → Fallback về localStorage                   │
+│                                                                  │
+│  2. User thay đổi → autoSave() / save() → saveToAPI()         │
+│        ↓                                                         │
+│     POST /api/process-flow/project/:projectId                  │
+│        ↓                                                         │
+│     Nếu thành công → Lưu vào localStorage (backup)            │
+│     Nếu thất bại  → Fallback về localStorage                   │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+                    JSON Request (Bearer Token)
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    DigiHub Backend (Express.js)                 │
+│                                                                  │
+│  GET /api/process-flow/project/:projectId                       │
+│       ↓                                                          │
+│    PostgreSQL: SELECT * FROM process_flow_diagrams              │
+│       ↓                                                          │
+│    Return JSON: { modulesConfig, moduleData, connectionData,    │
+│                   moduleConnections }                           │
+│                                                                  │
+│  POST /api/process-flow/project/:projectId                      │
+│       ↓                                                          │
+│    Check exists → INSERT or UPDATE                              │
+│       ↓                                                          │
+│    PostgreSQL: INSERT/UPDATE process_flow_diagrams             │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                      PostgreSQL Database                        │
+│                                                                  │
+│  process_flow_diagrams:                                         │
+│  - project_id (UUID, unique)                                    │
+│  - modules_config (JSONB)                                      │
+│  - module_data (JSONB)                                          │
+│  - connection_data (JSONB)                                      │
+│  - module_connections (JSONB)                                  │
+│  - created_by, created_at, updated_at                          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 5. Xác thực (Authentication)
+
+- Tất cả API endpoints yêu cầu token xác thực (Bearer token)
+- Token được lấy từ `localStorage.getItem('digihub_token')`
+- Middleware `auth` trong backend xử lý việc xác thực
+- Nếu không có token → Fallback về localStorage
+
+---
+
+## 6. Chạy migration thủ công
+
+Để database hoạt động, cần chạy migration:
+
+```bash
+# Di chuyển đến thư mục project
+cd /path/to/all-in-one-team-and-project-management
+
+# Chạy migration bằng psql
+psql -U postgres -d digihub -f backend/database/20260220000001-add-process-flow-diagrams.sql
+
+# Hoặc sử dụng Node.js init script nếu có
+node backend/init.js
+```
+
+---
+
+## 7. Tóm tắt các files đã tạo/sửa
+
+| Loại | File | Mô tả |
+|------|------|-------|
+| Tạo mới | `backend/database/20260220000001-add-process-flow-diagrams.sql` | Migration tạo bảng process_flow_diagrams |
+| Tạo mới | `backend/routes/processFlow.js` | API routes cho load/save/delete diagram |
+| Sửa | `backend/server.js` | Thêm route `/api/process-flow` |
+| Sửa | `process-flow-editor.html` | Thêm loadFromAPI(), saveToAPI(), cập nhật các hàm save |
+
+---
+
+## 8. Testing
+
+Sau khi hoàn thành tích hợp:
+
+1. **Đăng nhập** vào DigiHub MES
+2. **Vào Process Flow** và chọn một project
+3. **Tạo/Edit** sơ đồ (thêm modules, submodules, connections)
+4. **Click Lưu** hoặc đợi auto-save
+5. **Refresh trang** - sơ đồ sẽ được load từ API database
+6. **Đăng nhập từ trình duyệt khác** - verify data được sync
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐

@@ -9,6 +9,13 @@ class MeetingsManager {
     this.currentMeeting = null;
     this.currentTab = 'upcoming';
     this.editingMinutes = false;
+
+    // Recording functionality
+    this.mediaRecorder = null;
+    this.audioChunks = [];
+    this.isRecording = false;
+    this.recordingMeetingId = null;
+    this.recordingStartTime = null;
   }
 
   // Initialize meetings module
@@ -329,12 +336,36 @@ class MeetingsManager {
       const result = await api.getMeeting(meetingId);
       if (result.success) {
         this.currentMeeting = result.data;
+
+        // Check recording status for this meeting
+        const recordingStatus = await this.checkRecordingStatus(meetingId);
+
         this.renderMeetingDetail(this.currentMeeting);
+
+        // Update recording UI based on status
+        this.updateRecordingButtons(recordingStatus);
+
         document.getElementById('meeting-detail-modal')?.classList.remove('hidden');
       }
     } catch (error) {
       console.error('[Meetings] Failed to load meeting detail:', error);
       showToast('Failed to load meeting details', 'error');
+    }
+  }
+
+  // Update recording buttons based on recording status
+  updateRecordingButtons(recordingStatus) {
+    const viewSummaryBtn = document.getElementById('meeting-recording-view-summary');
+    const recordingInfo = document.getElementById('meeting-recording-info');
+
+    if (recordingStatus?.hasRecording && recordingStatus?.status === 'completed') {
+      // Show "View Summary" button
+      if (viewSummaryBtn) viewSummaryBtn.classList.remove('hidden');
+      if (recordingInfo) recordingInfo.classList.remove('hidden');
+    } else {
+      // Hide "View Summary" button
+      if (viewSummaryBtn) viewSummaryBtn.classList.add('hidden');
+      if (recordingInfo) recordingInfo.classList.add('hidden');
     }
   }
 
@@ -689,6 +720,330 @@ class MeetingsManager {
       cancelled: 'bg-danger/20 text-danger'
     };
     return classes[status] || classes.scheduled;
+  }
+
+  // ==================
+  // Recording Methods
+  // ==================
+
+  // Check if browser supports audio recording
+  checkMediaRecorderSupport() {
+    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  }
+
+  // Start recording audio for a meeting
+  async startRecording(meetingId) {
+    if (this.isRecording) {
+      showToast('Already recording', 'warning');
+      return false;
+    }
+
+    if (!this.checkMediaRecorderSupport()) {
+      showToast('Your browser does not support audio recording', 'error');
+      return false;
+    }
+
+    try {
+      // Request microphone access
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // Create MediaRecorder
+      this.mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus'
+      });
+
+      this.audioChunks = [];
+      this.recordingMeetingId = meetingId;
+      this.recordingStartTime = Date.now();
+
+      // Handle data available event
+      this.mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          this.audioChunks.push(event.data);
+        }
+      };
+
+      // Handle recording stop
+      this.mediaRecorder.onstop = async () => {
+        console.log('[Meetings] Recording stopped, processing...');
+        await this.processRecording();
+      };
+
+      // Start recording
+      this.mediaRecorder.start(1000); // Collect data every second
+      this.isRecording = true;
+
+      // Update UI
+      this.updateRecordingUI(true);
+
+      showToast('Recording started', 'success');
+      console.log('[Meetings] Recording started for meeting:', meetingId);
+
+      return true;
+    } catch (error) {
+      console.error('[Meetings] Failed to start recording:', error);
+      showToast('Failed to start recording: ' + error.message, 'error');
+      return false;
+    }
+  }
+
+  // Stop recording
+  stopRecording() {
+    if (!this.isRecording || !this.mediaRecorder) {
+      showToast('No active recording', 'warning');
+      return false;
+    }
+
+    try {
+      this.mediaRecorder.stop();
+
+      // Stop all tracks to release microphone
+      this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+
+      this.isRecording = false;
+
+      // Update UI
+      this.updateRecordingUI(false);
+
+      showToast('Recording stopped, processing...', 'info');
+      console.log('[Meetings] Recording stopped');
+
+      return true;
+    } catch (error) {
+      console.error('[Meetings] Failed to stop recording:', error);
+      showToast('Failed to stop recording', 'error');
+      return false;
+    }
+  }
+
+  // Process the recorded audio
+  async processRecording() {
+    if (this.audioChunks.length === 0) {
+      showToast('No audio data recorded', 'error');
+      return false;
+    }
+
+    try {
+      // Create audio blob
+      const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+
+      // Convert to base64
+      const audioData = await this.blobToBase64(audioBlob);
+
+      // Calculate duration
+      const duration = Math.round((Date.now() - this.recordingStartTime) / 1000);
+
+      // Show processing indicator
+      showToast('Uploading and processing recording...', 'info');
+
+      // Start NotebookLM session first
+      await api.startNotebookLMSession();
+
+      // Upload to server for processing
+      const result = await api.uploadRecording(
+        this.recordingMeetingId,
+        audioData,
+        duration
+      );
+
+      if (result.success) {
+        showToast('Recording processed successfully!', 'success');
+
+        // End NotebookLM session
+        await api.endNotebookLMSession();
+
+        // Reload meeting to get updated data
+        await this.loadMeetings();
+
+        // Show summary if available
+        if (result.data?.summary) {
+          this.showSummaryModal(result.data.summary);
+        }
+
+        return true;
+      } else {
+        throw new Error(result.message || 'Processing failed');
+      }
+    } catch (error) {
+      console.error('[Meetings] Failed to process recording:', error);
+      showToast('Failed to process recording: ' + error.message, 'error');
+      return false;
+    } finally {
+      // Reset recording state
+      this.audioChunks = [];
+      this.recordingMeetingId = null;
+      this.recordingStartTime = null;
+    }
+  }
+
+  // Convert blob to base64
+  blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        // Remove data URL prefix to get just the base64 data
+        const base64 = reader.result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  // Update recording UI
+  updateRecordingUI(isRecording) {
+    const startBtn = document.getElementById('meeting-recording-start');
+    const stopBtn = document.getElementById('meeting-recording-stop');
+    const statusEl = document.getElementById('meeting-recording-status');
+    const indicator = document.getElementById('meeting-recording-indicator');
+
+    if (startBtn) startBtn.classList.toggle('hidden', isRecording);
+    if (stopBtn) stopBtn.classList.toggle('hidden', !isRecording);
+
+    if (statusEl) {
+      if (isRecording) {
+        statusEl.textContent = 'Recording...';
+        statusEl.classList.add('text-red-500');
+        statusEl.classList.remove('text-slate-400');
+      } else {
+        statusEl.textContent = 'Not recording';
+        statusEl.classList.remove('text-red-500');
+        statusEl.classList.add('text-slate-400');
+      }
+    }
+
+    if (indicator) {
+      if (isRecording) {
+        indicator.classList.remove('hidden');
+        // Add pulse animation
+        indicator.innerHTML = `
+          <span class="relative flex h-3 w-3">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+          </span>
+        `;
+      } else {
+        indicator.classList.add('hidden');
+      }
+    }
+  }
+
+  // Show summary modal
+  showSummaryModal(summary) {
+    // Create or update summary modal
+    let modal = document.getElementById('meeting-summary-modal');
+
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'meeting-summary-modal';
+      modal.className = 'fixed inset-0 z-50 hidden';
+      modal.innerHTML = `
+        <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
+        <div class="fixed inset-0 overflow-y-auto">
+          <div class="flex min-h-full items-center justify-center p-4">
+            <div class="w-full max-w-2xl bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden" onclick="event.stopPropagation()">
+              <div class="px-6 py-4 border-b border-slate-700 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-white">Meeting Summary</h3>
+                <button onclick="document.getElementById('meeting-summary-modal').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="px-6 py-4 max-h-[60vh] overflow-y-auto">
+                <div id="meeting-summary-content" class="prose prose-invert prose-sm"></div>
+              </div>
+              <div class="px-6 py-4 border-t border-slate-700 flex justify-end gap-2">
+                <button onclick="document.getElementById('meeting-summary-modal').classList.add('hidden')" class="px-4 py-2 text-slate-300 hover:text-white">Close</button>
+                <button onclick="meetingsManager.downloadSummary()" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg">Download</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    // Set summary content
+    const contentEl = document.getElementById('meeting-summary-content');
+    if (contentEl) {
+      // Convert markdown-like text to HTML
+      contentEl.innerHTML = this.formatSummaryAsHtml(summary);
+    }
+
+    // Store current summary for download
+    this.currentSummary = summary;
+
+    // Show modal
+    modal.classList.remove('hidden');
+  }
+
+  // Format summary as HTML
+  formatSummaryAsHtml(summary) {
+    if (!summary) return '<p class="text-slate-400">No summary available</p>';
+
+    // Basic formatting - convert markdown-like syntax to HTML
+    let html = summary
+      // Escape HTML
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      // Headers
+      .replace(/^### (.+)$/gm, '<h4 class="text-white font-semibold mt-4 mb-2">$1</h4>')
+      .replace(/^## (.+)$/gm, '<h3 class="text-white font-semibold mt-4 mb-2">$1</h3>')
+      // Bold
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      // Bullet points
+      .replace(/^- (.+)$/gm, '<li class="text-slate-300 ml-4">$1</li>')
+      // Numbered lists
+      .replace(/^\d+\. (.+)$/gm, '<li class="text-slate-300 ml-4">$1</li>')
+      // Line breaks
+      .replace(/\n\n/g, '</p><p class="text-slate-300 mb-2">')
+      .replace(/\n/g, '<br>');
+
+    return `<p class="text-slate-300 mb-2">${html}</p>`;
+  }
+
+  // Download summary as text file
+  downloadSummary() {
+    if (!this.currentSummary) {
+      showToast('No summary to download', 'warning');
+      return;
+    }
+
+    const blob = new Blob([this.currentSummary], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `meeting-summary-${this.recordingMeetingId || 'unknown'}-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast('Summary downloaded', 'success');
+  }
+
+  // Check recording status for a meeting
+  async checkRecordingStatus(meetingId) {
+    try {
+      const result = await api.getRecordingStatus(meetingId);
+      return result.data;
+    } catch (error) {
+      console.error('[Meetings] Failed to check recording status:', error);
+      return { hasRecording: false, status: null };
+    }
+  }
+
+  // Get recording details for a meeting
+  async getRecordingDetails(meetingId) {
+    try {
+      const result = await api.getRecording(meetingId);
+      return result.data;
+    } catch (error) {
+      console.error('[Meetings] Failed to get recording details:', error);
+      return null;
+    }
   }
 }
 
@@ -1079,5 +1434,41 @@ function updateCurrentMeetingFromFields() {
   // Minutes
   const minEl = document.getElementById('meeting-detail-minutes');
   if (minEl) m.minutes = minEl.innerHTML;
+}
+
+// ==================
+// Recording Functions (Global)
+// ==================
+
+function startMeetingRecording() {
+  if (!meetingsManager.currentMeeting) {
+    showToast('No meeting selected', 'warning');
+    return;
+  }
+  meetingsManager.startRecording(meetingsManager.currentMeeting.id);
+}
+
+function stopMeetingRecording() {
+  meetingsManager.stopRecording();
+}
+
+function showMeetingSummary() {
+  // Check if there's a recording for this meeting
+  if (!meetingsManager.currentMeeting) {
+    showToast('No meeting selected', 'warning');
+    return;
+  }
+
+  meetingsManager.getRecordingDetails(meetingsManager.currentMeeting.id).then(recording => {
+    if (recording?.summary) {
+      meetingsManager.showSummaryModal(recording.summary);
+    } else {
+      showToast('No summary available for this meeting', 'info');
+    }
+  });
+}
+
+function downloadMeetingSummary() {
+  meetingsManager.downloadSummary();
 }
 

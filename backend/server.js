@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
@@ -25,6 +26,13 @@ app.use((req, res, next) => {
 // Serve static files from parent directory (frontend)
 app.use(express.static(path.join(__dirname, '..')));
 
+// Serve uploaded files (recordings and summaries)
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use('/uploads', express.static(uploadsDir));
+
 // Serve index.html for root route
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'index.html'));
@@ -46,6 +54,7 @@ app.use('/api/reports', require('./routes/reports'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/activities', require('./routes/activities'));
 app.use('/api/process-flow', require('./routes/processFlow'));
+app.use('/api/notebooklm', require('./routes/notebooklm'));
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -78,7 +78,10 @@ router.get('/', async (req, res, next) => {
           id: n.id,
           name: `${n.first_name} ${n.last_name}`,
           email: n.email
-        }))
+        })),
+        recordingUrl: meeting.recording_url,
+        summaryUrl: meeting.summary_url,
+        recordingStatus: meeting.recording_status
       };
     }));
     
@@ -148,7 +151,10 @@ router.get('/:id', async (req, res, next) => {
           id: n.id,
           name: `${n.first_name} ${n.last_name}`,
           email: n.email
-        }))
+        })),
+        recordingUrl: meeting.recording_url,
+        summaryUrl: meeting.summary_url,
+        recordingStatus: meeting.recording_status
       }
     });
   }catch (error) {

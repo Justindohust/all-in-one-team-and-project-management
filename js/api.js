@@ -683,6 +683,40 @@ class DigiHubAPI {
       method: 'DELETE'
     });
   }
+
+  // ==================
+  // NOTEBOOKLM (Recording & Summary)
+  // ==================
+  async getNotebookLMConfig() {
+    return this.request('/notebooklm/config');
+  }
+
+  async startNotebookLMSession() {
+    return this.request('/notebooklm/session/start', {
+      method: 'POST'
+    });
+  }
+
+  async endNotebookLMSession() {
+    return this.request('/notebooklm/session/end', {
+      method: 'POST'
+    });
+  }
+
+  async uploadRecording(meetingId, audioData, duration) {
+    return this.request('/notebooklm/upload', {
+      method: 'POST',
+      body: JSON.stringify({ meetingId, audioData, duration })
+    });
+  }
+
+  async getRecording(meetingId) {
+    return this.request(`/notebooklm/recording/${meetingId}`);
+  }
+
+  async getRecordingStatus(meetingId) {
+    return this.request(`/notebooklm/status/${meetingId}`);
+  }
 }
 
 // Create global API instance
