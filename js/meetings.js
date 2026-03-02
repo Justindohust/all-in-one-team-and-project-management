@@ -353,15 +353,33 @@ class MeetingsManager {
     }
   }
 
+  // Format time as MM:SS or HH:MM:SS
+  formatDuration(seconds) {
+    if (!seconds || seconds < 0) return '00:00';
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hours > 0) {
+      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+
   // Update recording buttons based on recording status
   updateRecordingButtons(recordingStatus) {
     const viewSummaryBtn = document.getElementById('meeting-recording-view-summary');
     const recordingInfo = document.getElementById('meeting-recording-info');
+    const durationEl = document.getElementById('meeting-recording-duration');
 
     if (recordingStatus?.hasRecording && recordingStatus?.status === 'completed') {
       // Show "View Summary" button
       if (viewSummaryBtn) viewSummaryBtn.classList.remove('hidden');
       if (recordingInfo) recordingInfo.classList.remove('hidden');
+
+      // Update duration if available
+      if (durationEl && recordingStatus?.duration) {
+        durationEl.textContent = this.formatDuration(recordingStatus.duration);
+      }
     } else {
       // Hide "View Summary" button
       if (viewSummaryBtn) viewSummaryBtn.classList.add('hidden');
@@ -506,6 +524,13 @@ class MeetingsManager {
     select.classList.remove('status-scheduled', 'status-in_progress', 'status-completed', 'status-cancelled');
     select.classList.add(`status-${select.value}`);
     select.classList.add('meeting-status-badge');
+
+    // Also update the status indicator dot
+    const indicator = document.getElementById('meeting-status-indicator');
+    if (indicator) {
+      indicator.classList.remove('status-scheduled', 'status-in_progress', 'status-completed', 'status-cancelled');
+      indicator.classList.add(`status-${select.value}`);
+    }
   }
 
   // Open one-time meeting modal
@@ -890,6 +915,47 @@ class MeetingsManager {
     });
   }
 
+  // Recording timer interval
+  recordingTimerInterval = null;
+
+  // Format time as MM:SS
+  // Start recording timer
+  startRecordingTimer() {
+    const timerEl = document.getElementById('meeting-recording-timer');
+    const timeEl = document.getElementById('meeting-recording-time');
+    const pulseEl = document.getElementById('meeting-recording-pulse');
+
+    if (!timerEl || !timeEl) return;
+
+    let elapsedSeconds = 0;
+
+    // Show timer
+    timerEl.classList.remove('hidden');
+    if (pulseEl) pulseEl.classList.remove('hidden');
+
+    // Update time every second
+    this.recordingTimerInterval = setInterval(() => {
+      elapsedSeconds++;
+      timeEl.textContent = this.formatDuration(elapsedSeconds);
+    }, 1000);
+  }
+
+  // Stop recording timer
+  stopRecordingTimer() {
+    if (this.recordingTimerInterval) {
+      clearInterval(this.recordingTimerInterval);
+      this.recordingTimerInterval = null;
+    }
+
+    const timerEl = document.getElementById('meeting-recording-timer');
+    const pulseEl = document.getElementById('meeting-recording-pulse');
+    const timeEl = document.getElementById('meeting-recording-time');
+
+    if (timerEl) timerEl.classList.add('hidden');
+    if (pulseEl) pulseEl.classList.add('hidden');
+    if (timeEl) timeEl.textContent = '00:00';
+  }
+
   // Update recording UI
   updateRecordingUI(isRecording) {
     const startBtn = document.getElementById('meeting-recording-start');
@@ -925,6 +991,13 @@ class MeetingsManager {
       } else {
         indicator.classList.add('hidden');
       }
+    }
+
+    // Handle timer
+    if (isRecording) {
+      this.startRecordingTimer();
+    } else {
+      this.stopRecordingTimer();
     }
   }
 
@@ -1292,6 +1365,7 @@ function toggleMeetingParticipantsDropdown() {
     list.classList.toggle('hidden');
   }
 }
+window.toggleMeetingParticipantsDropdown = toggleMeetingParticipantsDropdown;
 
 function editMeetingParticipants() {
   meetingsManager.toggleInlineDropdown('participants', null);
@@ -1335,6 +1409,12 @@ function sendMeetingMinutes() {
 function deleteMeeting() {
   meetingsManager.deleteMeeting();
 }
+window.deleteMeeting = deleteMeeting;
+
+function closeMeetingDetailModal() {
+  meetingsManager.closeMeetingDetailModal();
+}
+window.closeMeetingDetailModal = closeMeetingDetailModal;
 
 // ==================
 // Rich Text Formatting
@@ -1471,4 +1551,83 @@ function showMeetingSummary() {
 function downloadMeetingSummary() {
   meetingsManager.downloadSummary();
 }
+
+// ==================
+// Global functions for Meeting Detail Modal UI
+// ==================
+
+// Switch between content tabs (Details, Participants, Recording, Attachments, Summary)
+window.switchMeetingContentTab = function(tabName) {
+  // Hide all tab contents
+  document.querySelectorAll('.mtg-tab-content').forEach(el => el.classList.remove('active'));
+  // Deactivate all tabs
+  document.querySelectorAll('.mtg-tab').forEach(el => el.classList.remove('active'));
+
+  // Activate selected tab and content
+  const contentEl = document.getElementById(`mtg-content-${tabName}`);
+  const tabEl = document.getElementById(`mtg-tab-${tabName}`);
+  if (contentEl) contentEl.classList.add('active');
+  if (tabEl) tabEl.classList.add('active');
+};
+
+// Switch meeting type toggle (One-time / Recurring)
+window.switchMeetingType = function(type) {
+  document.querySelectorAll('.mtg-type-toggle button').forEach(btn => {
+    btn.classList.remove('active', 'bg-primary-500', 'text-white');
+    btn.classList.add('text-slate-400');
+  });
+  const selectedBtn = document.getElementById(`meeting-type-${type}`);
+  if (selectedBtn) {
+    selectedBtn.classList.add('active', 'bg-primary-500', 'text-white');
+    selectedBtn.classList.remove('text-slate-400');
+  }
+};
+
+// Toggle recording button and visualization
+window.toggleRecording = function() {
+  const btn = document.getElementById('mtg-record-btn');
+  if (!btn) return;
+
+  const waveformBars = document.querySelectorAll('.waveform-bar');
+  const volumeBars = document.querySelectorAll('.volume-bar');
+  const statusText = document.querySelector('.recording-status-text');
+
+  if (btn.textContent.includes('Start')) {
+    btn.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg> Stop Recording';
+    btn.classList.remove('bg-red-500', 'hover:bg-red-600');
+    btn.classList.add('bg-slate-600', 'hover:bg-slate-500');
+
+    // Activate waveform
+    waveformBars.forEach(bar => {
+      bar.classList.remove('inactive');
+      bar.classList.add('active');
+    });
+
+    // Activate volume meter
+    volumeBars.forEach(bar => {
+      bar.classList.remove('inactive');
+      bar.classList.add('active');
+    });
+
+    if (statusText) statusText.textContent = 'Recording...';
+  } else {
+    btn.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg> Start Recording';
+    btn.classList.add('bg-red-500', 'hover:bg-red-600');
+    btn.classList.remove('bg-slate-600', 'hover:bg-slate-500');
+
+    // Deactivate waveform
+    waveformBars.forEach(bar => {
+      bar.classList.add('inactive');
+      bar.classList.remove('active');
+    });
+
+    // Deactivate volume meter
+    volumeBars.forEach(bar => {
+      bar.classList.add('inactive');
+      bar.classList.remove('active');
+    });
+
+    if (statusText) statusText.textContent = 'Not recording';
+  }
+};
 
