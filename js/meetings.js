@@ -23,9 +23,25 @@ class MeetingsManager {
     console.log('[Meetings] Initializing...');
     await this.loadMeetings();
     this.setupEventListeners();
+    this.initWaveform();
     console.log('[Meetings] Calling attachDropdownListeners from init()...');
     this.attachDropdownListeners();
     console.log('[Meetings] init() complete');
+  }
+
+  // Initialize waveform visualizer
+  initWaveform() {
+    const waveformContainer = document.getElementById('mtg-waveform');
+    if (!waveformContainer) return;
+
+    // Create 32 waveform bars
+    waveformContainer.innerHTML = '';
+    for (let i = 0; i < 32; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'waveform-bar inactive';
+      bar.style.height = `${Math.random() * 30 + 10}px`;
+      waveformContainer.appendChild(bar);
+    }
   }
 
   // Attach dropdown button listeners (called every time view is rendered)
@@ -349,6 +365,12 @@ class MeetingsManager {
 
         // Update recording UI based on status
         this.updateRecordingButtons(recordingStatus);
+
+        // Initialize waveform for recording tab
+        this.initWaveform();
+
+        // Load saved recordings for this meeting
+        await this.loadSavedRecordings(meetingId);
 
         document.getElementById('meeting-detail-modal')?.classList.remove('hidden');
       }
@@ -822,8 +844,14 @@ class MeetingsManager {
       this.mediaRecorder.start(1000); // Collect data every second
       this.isRecording = true;
 
+      // Start timer
+      this.startRecordingTimer();
+
       // Update UI
       this.updateRecordingUI(true);
+
+      // Start waveform animation
+      this.startWaveformAnimation();
 
       showToast('Recording started', 'success');
       console.log('[Meetings] Recording started for meeting:', meetingId);
@@ -851,8 +879,14 @@ class MeetingsManager {
 
       this.isRecording = false;
 
+      // Stop timer
+      this.stopRecordingTimer();
+
       // Update UI
       this.updateRecordingUI(false);
+
+      // Stop waveform animation
+      this.stopWaveformAnimation();
 
       showToast('Recording stopped, processing...', 'info');
       console.log('[Meetings] Recording stopped');
@@ -882,17 +916,19 @@ class MeetingsManager {
       // Calculate duration
       const duration = Math.round((Date.now() - this.recordingStartTime) / 1000);
 
-      // Show processing indicator
-      showToast('Uploading and processing recording...', 'info');
+      // Show processing indicator in UI
+      this.showProcessingIndicator();
 
       // Start NotebookLM session first
       await api.startNotebookLMSession();
 
       // Upload to server for processing
+      const meetingTitle = this.currentMeeting?.title || `Meeting ${this.recordingMeetingId}`;
       const result = await api.uploadRecording(
         this.recordingMeetingId,
         audioData,
-        duration
+        duration,
+        meetingTitle
       );
 
       if (result.success) {
@@ -903,6 +939,9 @@ class MeetingsManager {
 
         // Reload meeting to get updated data
         await this.loadMeetings();
+
+        // Load and display saved recordings
+        await this.loadSavedRecordings(this.recordingMeetingId);
 
         // Show summary if available
         if (result.data?.summary) {
@@ -922,6 +961,149 @@ class MeetingsManager {
       this.audioChunks = [];
       this.recordingMeetingId = null;
       this.recordingStartTime = null;
+    }
+  }
+
+  // Show processing indicator in UI
+  showProcessingIndicator() {
+    const container = document.getElementById('saved-recordings-container');
+    const list = document.getElementById('saved-recordings-list');
+
+    if (!container || !list) return;
+
+    container.classList.remove('hidden');
+    list.innerHTML = `
+      <div class="recording-processing">
+        <div class="spinner"></div>
+        <span>Processing recording... Please wait.</span>
+      </div>
+    `;
+  }
+
+  // Load saved recordings for a meeting
+  async loadSavedRecordings(meetingId) {
+    try {
+      const result = await api.getRecording(meetingId);
+
+      // Hide container if no recording exists (404 is normal)
+      if (!result.success && result.message?.includes('No recording found')) {
+        const container = document.getElementById('saved-recordings-container');
+        if (container) container.classList.add('hidden');
+        return;
+      }
+
+      this.displaySavedRecordings(result);
+    } catch (error) {
+      console.error('[Meetings] Failed to load saved recordings:', error);
+      // Silently fail - no recording is not an error
+    }
+  }
+
+  // Display saved recordings in UI
+  displaySavedRecordings(recording) {
+    const container = document.getElementById('saved-recordings-container');
+    const list = document.getElementById('saved-recordings-list');
+
+    if (!container || !list) return;
+
+    if (!recording || !recording.success) {
+      container.classList.add('hidden');
+      return;
+    }
+
+    const data = recording.data;
+    const createdDate = new Date(data.created_at).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const durationMinutes = Math.floor(data.duration_seconds / 60);
+    const durationSeconds = data.duration_seconds % 60;
+    const durationStr = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
+
+    // Status badge
+    let statusBadge = '';
+    if (data.status === 'processing') {
+      statusBadge = `<span class="px-2 py-0.5 text-xs rounded-full bg-yellow-500/20 text-yellow-400">Processing</span>`;
+    } else if (data.status === 'completed') {
+      statusBadge = `<span class="px-2 py-0.5 text-xs rounded-full bg-green-500/20 text-green-400">Ready</span>`;
+    } else if (data.status === 'failed') {
+      statusBadge = `<span class="px-2 py-0.5 text-xs rounded-full bg-red-500/20 text-red-400">Failed</span>`;
+    }
+
+    container.classList.remove('hidden');
+    list.innerHTML = `
+      <div class="saved-recording-item">
+        <div class="saved-recording-info">
+          <div class="saved-recording-icon">
+            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
+            </svg>
+          </div>
+          <div class="saved-recording-details">
+            <h6 class="font-medium">Meeting Recording</h6>
+            <p class="flex items-center gap-2">
+              <span>${createdDate}</span>
+              <span>•</span>
+              <span>${durationStr}</span>
+              ${statusBadge}
+            </p>
+          </div>
+        </div>
+        <div class="saved-recording-actions">
+          ${data.status === 'completed' ? `
+            <button onclick="meetingsManager.downloadRecording('${data.id}')" class="saved-recording-btn download" title="Download">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+            </button>
+          ` : ''}
+          <button onclick="meetingsManager.deleteRecording('${data.id}')" class="saved-recording-btn delete" title="Delete">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  // Download recording
+  async downloadRecording(recordingId) {
+    try {
+      showToast('Preparing download...', 'info');
+      // TODO: Implement download functionality
+      showToast('Download started', 'success');
+    } catch (error) {
+      console.error('[Meetings] Failed to download recording:', error);
+      showToast('Failed to download recording', 'error');
+    }
+  }
+
+  // Delete recording
+  async deleteRecording(recordingId) {
+    if (!confirm('Are you sure you want to delete this recording?')) {
+      return;
+    }
+
+    try {
+      const result = await api.deleteRecording(recordingId);
+      if (result.success) {
+        showToast('Recording deleted', 'success');
+
+        // Reload recordings
+        if (this.currentMeeting) {
+          await this.loadSavedRecordings(this.currentMeeting.id);
+        }
+      } else {
+        throw new Error(result.message || 'Delete failed');
+      }
+    } catch (error) {
+      console.error('[Meetings] Failed to delete recording:', error);
+      showToast('Failed to delete recording: ' + error.message, 'error');
     }
   }
 
@@ -980,49 +1162,92 @@ class MeetingsManager {
     if (timeEl) timeEl.textContent = '00:00';
   }
 
+  // Waveform animation
+  waveformInterval = null;
+
+  // Start waveform animation
+  startWaveformAnimation() {
+    const waveformBars = document.querySelectorAll('.waveform-bar');
+    if (waveformBars.length === 0) return;
+
+    // Initialize bars
+    waveformBars.forEach(bar => {
+      bar.classList.remove('inactive');
+      bar.classList.add('active');
+    });
+
+    // Animate bars with random heights
+    this.waveformInterval = setInterval(() => {
+      waveformBars.forEach((bar, index) => {
+        if (bar.classList.contains('active')) {
+          const randomHeight = Math.floor(Math.random() * 40) + 10;
+          bar.style.height = `${randomHeight}px`;
+        }
+      });
+    }, 150);
+  }
+
+  // Stop waveform animation
+  stopWaveformAnimation() {
+    if (this.waveformInterval) {
+      clearInterval(this.waveformInterval);
+      this.waveformInterval = null;
+    }
+
+    const waveformBars = document.querySelectorAll('.waveform-bar');
+    waveformBars.forEach(bar => {
+      bar.classList.add('inactive');
+      bar.classList.remove('active');
+      bar.style.height = '';
+    });
+  }
+
   // Update recording UI
   updateRecordingUI(isRecording) {
-    const startBtn = document.getElementById('meeting-recording-start');
-    const stopBtn = document.getElementById('meeting-recording-stop');
-    const statusEl = document.getElementById('meeting-recording-status');
-    const indicator = document.getElementById('meeting-recording-indicator');
+    const btn = document.getElementById('mtg-record-btn');
+    const btnText = document.getElementById('mtg-record-btn-text');
+    const statusText = document.querySelector('.recording-status-text');
+    const timerEl = document.getElementById('meeting-recording-timer');
 
-    if (startBtn) startBtn.classList.toggle('hidden', isRecording);
-    if (stopBtn) stopBtn.classList.toggle('hidden', !isRecording);
-
-    if (statusEl) {
+    if (btn) {
       if (isRecording) {
-        statusEl.textContent = 'Recording...';
-        statusEl.classList.add('text-red-500');
-        statusEl.classList.remove('text-slate-400');
-      } else {
-        statusEl.textContent = 'Not recording';
-        statusEl.classList.remove('text-red-500');
-        statusEl.classList.add('text-slate-400');
-      }
-    }
-
-    if (indicator) {
-      if (isRecording) {
-        indicator.classList.remove('hidden');
-        // Add pulse animation
-        indicator.innerHTML = `
-          <span class="relative flex h-3 w-3">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-          </span>
+        btn.classList.add('recording');
+        btn.innerHTML = `
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+          Stop Recording
         `;
       } else {
-        indicator.classList.add('hidden');
+        btn.classList.remove('recording');
+        btn.innerHTML = `
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>
+          Start Recording
+        `;
       }
     }
 
-    // Handle timer
-    if (isRecording) {
-      this.startRecordingTimer();
-    } else {
-      this.stopRecordingTimer();
+    if (statusText) {
+      if (isRecording) {
+        statusText.textContent = 'Recording...';
+        statusText.classList.add('text-red-500');
+        statusText.classList.remove('text-slate-400');
+      } else {
+        statusText.textContent = 'Not recording';
+        statusText.classList.remove('text-red-500');
+        statusText.classList.add('text-slate-400');
+      }
     }
+
+    // Volume meter animation
+    const volumeBars = document.querySelectorAll('.volume-bar');
+    volumeBars.forEach(bar => {
+      if (isRecording) {
+        bar.classList.remove('inactive');
+        bar.classList.add('active');
+      } else {
+        bar.classList.add('inactive');
+        bar.classList.remove('active');
+      }
+    });
   }
 
   // Show summary modal
@@ -1608,50 +1833,18 @@ window.switchMeetingType = function(type) {
 };
 
 // Toggle recording button and visualization
-window.toggleRecording = function() {
-  const btn = document.getElementById('mtg-record-btn');
-  if (!btn) return;
+window.toggleRecording = async function() {
+  if (!meetingsManager.currentMeeting) {
+    showToast('No meeting selected', 'warning');
+    return;
+  }
 
-  const waveformBars = document.querySelectorAll('.waveform-bar');
-  const volumeBars = document.querySelectorAll('.volume-bar');
-  const statusText = document.querySelector('.recording-status-text');
-
-  if (btn.textContent.includes('Start')) {
-    btn.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg> Stop Recording';
-    btn.classList.remove('bg-red-500', 'hover:bg-red-600');
-    btn.classList.add('bg-slate-600', 'hover:bg-slate-500');
-
-    // Activate waveform
-    waveformBars.forEach(bar => {
-      bar.classList.remove('inactive');
-      bar.classList.add('active');
-    });
-
-    // Activate volume meter
-    volumeBars.forEach(bar => {
-      bar.classList.remove('inactive');
-      bar.classList.add('active');
-    });
-
-    if (statusText) statusText.textContent = 'Recording...';
+  if (meetingsManager.isRecording) {
+    // Stop recording
+    meetingsManager.stopRecording();
   } else {
-    btn.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg> Start Recording';
-    btn.classList.add('bg-red-500', 'hover:bg-red-600');
-    btn.classList.remove('bg-slate-600', 'hover:bg-slate-500');
-
-    // Deactivate waveform
-    waveformBars.forEach(bar => {
-      bar.classList.add('inactive');
-      bar.classList.remove('active');
-    });
-
-    // Deactivate volume meter
-    volumeBars.forEach(bar => {
-      bar.classList.add('inactive');
-      bar.classList.remove('active');
-    });
-
-    if (statusText) statusText.textContent = 'Not recording';
+    // Start recording
+    await meetingsManager.startRecording(meetingsManager.currentMeeting.id);
   }
 };
 

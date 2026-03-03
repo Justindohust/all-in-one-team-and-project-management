@@ -692,21 +692,21 @@ class DigiHubAPI {
   }
 
   async startNotebookLMSession() {
-    return this.request('/notebooklm/session/start', {
+    // Uses browser-based auth now, no need to start session
+    return this.request('/notebooklm/login', {
       method: 'POST'
     });
   }
 
   async endNotebookLMSession() {
-    return this.request('/notebooklm/session/end', {
-      method: 'POST'
-    });
+    // No session to end with browser-based auth
+    return { success: true };
   }
 
-  async uploadRecording(meetingId, audioData, duration) {
+  async uploadRecording(meetingId, audioData, duration, meetingTitle) {
     return this.request('/notebooklm/upload', {
       method: 'POST',
-      body: JSON.stringify({ meetingId, audioData, duration })
+      body: JSON.stringify({ meetingId, audioData, duration, meetingTitle })
     });
   }
 
@@ -716,6 +716,12 @@ class DigiHubAPI {
 
   async getRecordingStatus(meetingId) {
     return this.request(`/notebooklm/status/${meetingId}`);
+  }
+
+  async deleteRecording(recordingId) {
+    return this.request(`/notebooklm/recording/${recordingId}`, {
+      method: 'DELETE'
+    });
   }
 }
 

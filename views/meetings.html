@@ -521,7 +521,12 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator, input[type="time"]:
                       <svg class="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
                       <h4 class="mtg-label">Audio Recording</h4>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-3">
+                      <!-- Recording Timer -->
+                      <div id="meeting-recording-timer" class="hidden flex items-center gap-2 px-3 py-1 bg-slate-800 rounded-full">
+                        <span id="meeting-recording-pulse" class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                        <span id="meeting-recording-time" class="text-sm font-mono text-red-400">00:00</span>
+                      </div>
                       <!-- Volume Meter -->
                       <div class="volume-meter">
                         <div class="volume-bar green inactive"></div>
@@ -541,11 +546,24 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator, input[type="time"]:
                   </div>
 
                   <!-- Record Controls -->
-                  <button onclick="toggleRecording()" id="mtg-record-btn" class="flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors w-full ml-7">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>
-                    Start Recording
-                  </button>
+                  <div class="flex gap-3 ml-7">
+                    <button onclick="toggleRecording()" id="mtg-record-btn" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>
+                      <span id="mtg-record-btn-text">Start Recording</span>
+                    </button>
+                  </div>
                   <p class="text-xs text-slate-500 ml-7">Click to start or stop audio recording. The meeting audio will be captured and saved for later review.</p>
+
+                  <!-- Saved Recordings List -->
+                  <div id="saved-recordings-container" class="hidden mt-4 ml-7">
+                    <div class="flex items-center gap-2 mb-2">
+                      <svg class="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                      <h5 class="text-sm font-medium text-slate-300">Saved Recordings</h5>
+                    </div>
+                    <div id="saved-recordings-list" class="bg-slate-800/30 rounded-lg divide-y divide-slate-700/50">
+                      <!-- Saved recordings will be populated dynamically -->
+                    </div>
+                  </div>
                 </div>
               </div>
 

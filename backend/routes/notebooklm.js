@@ -1,166 +1,61 @@
 /**
  * NotebookLM Integration Routes
- * Handles audio recording upload and Gemini AI summary generation
+ * Uses browser-based authentication with user's NotebookLM account
+ * No Gemini API key required
  */
 
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
-const axios = require('axios');
+const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
-
-// Configuration - will be fetched from VPS
-let notebookLMConfig = null;
-let configLastFetched = null;
-const CONFIG_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // ==================
 // Helper Functions
 // ==================
 
 /**
- * Fetch NotebookLM/Gemini configuration from remote VPS
- * This keeps credentials secure on the server side
+ * Run Python NotebookLM service
  */
-async function getNotebookLMConfig() {
-    const now = Date.now();
-    
-    // Return cached config if still valid
-    if (notebookLMConfig && configLastFetched && 
-        (now - configLastFetched) < CONFIG_CACHE_DURATION) {
-        return notebookLMConfig;
-    }
+function runNotebookLMService(audioPath, meetingTitle) {
+    return new Promise((resolve, reject) => {
+        const scriptPath = path.join(__dirname, '..', 'scripts', 'notebooklm_service.py');
 
-    try {
-        // Call to your VPS to get credentials
-        // The VPS should return API key, project ID, etc.
-        // Format: { apiKey: '...', projectId: '...', location: '...' }
-        const vpsUrl = process.env.NOTEBOOKLM_VPS_URL || 'http://103.179.191.109:3001/api/notebooklm/config';
-        
-        const response = await axios.get(vpsUrl, {
-            timeout: 10000,
-            headers: {
-                'X-Internal-Key': process.env.NOTEBOOKLM_INTERNAL_KEY || 'digihub-secret-key'
-            }
+        const python = spawn('python', [scriptPath, audioPath, meetingTitle], {
+            cwd: path.join(__dirname, '..')
         });
 
-        notebookLMConfig = response.data;
-        configLastFetched = now;
+        let stdout = '';
+        let stderr = '';
 
-        console.log('[NotebookLM] Configuration fetched successfully');
-        return notebookLMConfig;
-    } catch (error) {
-        console.error('[NotebookLM] Failed to fetch config from VPS:', error.message);
-        
-        // Return fallback config for development
-        if (process.env.NODE_ENV === 'development') {
-            return {
-                apiKey: process.env.GEMINI_API_KEY || '',
-                projectId: process.env.GEMINI_PROJECT_ID || '',
-                location: process.env.GEMINI_LOCATION || 'us-central1'
-            };
-        }
-        
-        throw new Error('Unable to connect to NotebookLM configuration server');
-    }
-}
+        python.stdout.on('data', (data) => {
+            stdout += data.toString();
+        });
 
-/**
- * Clear cached config (call after session completes)
- */
-function clearNotebookLMConfig() {
-    notebookLMConfig = null;
-    configLastFetched = null;
-    console.log('[NotebookLM] Configuration cache cleared');
-}
+        python.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
 
-/**
- * Transcribe audio using Gemini API
- */
-async function transcribeAudioWithGemini(audioBuffer, config) {
-    const { apiKey } = config;
-    
-    // Gemini 2.0 Flash with audio understanding
-    // Note: This uses the File API - adjust based on actual Gemini API capabilities
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-    
-    // For now, we'll use a simple transcription approach
-    // In production, you might use Google Cloud Speech-to-Text instead
-    
-    const base64Audio = audioBuffer.toString('base64');
-    
-    const requestBody = {
-        contents: [{
-            parts: [{
-                text: "Transcribe this audio recording of a meeting. Include all speakers if identifiable. Provide a detailed transcript."
-            }, {
-                inline_data: {
-                    mime_type: 'audio/webm',
-                    data: base64Audio
+        python.on('close', (code) => {
+            if (code !== 0) {
+                console.error('[NotebookLM] Python script error:', stderr);
+                reject(new Error(stderr || 'Python script failed'));
+            } else {
+                try {
+                    const result = JSON.parse(stdout);
+                    resolve(result);
+                } catch (e) {
+                    reject(new Error('Failed to parse Python output'));
                 }
-            }]
-        }],
-        generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 32000
-        }
-    };
-
-    try {
-        const response = await axios.post(url, requestBody, {
-            headers: {
-                'Content-Type': 'application/json'
             }
         });
 
-        return response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    } catch (error) {
-        console.error('[NotebookLM] Gemini transcription error:', error.response?.data || error.message);
-        throw new Error('Failed to transcribe audio');
-    }
-}
-
-/**
- * Generate summary from transcript using Gemini
- */
-async function generateSummaryWithGemini(transcript, config) {
-    const { apiKey } = config;
-    
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-    
-    const prompt = `You are a professional meeting summarizer. Please analyze this meeting transcript and create:
-1. A brief executive summary (2-3 sentences)
-2. Key discussion points (bullet list)
-3. Action items with owners (if mentioned)
-4. Decisions made (if any)
-
-Meeting Transcript:
-${transcript}`;
-
-    const requestBody = {
-        contents: [{
-            parts: [{ text: prompt }]
-        }],
-        generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 4096
-        }
-    };
-
-    try {
-        const response = await axios.post(url, requestBody, {
-            headers: {
-                'Content-Type': 'application/json'
-            }
+        python.on('error', (err) => {
+            reject(err);
         });
-
-        return response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    } catch (error) {
-        console.error('[NotebookLM] Gemini summary error:', error.response?.data || error.message);
-        throw new Error('Failed to generate summary');
-    }
+    });
 }
 
 /**
@@ -168,7 +63,7 @@ ${transcript}`;
  */
 function saveSummaryToFile(summary, meetingId) {
     const uploadsDir = path.join(__dirname, '..', 'uploads', 'summaries');
-    
+
     // Ensure directory exists
     if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });
@@ -176,9 +71,9 @@ function saveSummaryToFile(summary, meetingId) {
 
     const fileName = `meeting_${meetingId}_${Date.now()}.txt`;
     const filePath = path.join(uploadsDir, fileName);
-    
+
     fs.writeFileSync(filePath, summary, 'utf8');
-    
+
     return `/uploads/summaries/${fileName}`;
 }
 
@@ -188,18 +83,18 @@ function saveSummaryToFile(summary, meetingId) {
 
 /**
  * GET /api/notebooklm/config
- * Get NotebookLM configuration (validates connection to VPS)
+ * Get NotebookLM configuration status
  */
 router.get('/config', async (req, res, next) => {
     try {
-        const config = await getNotebookLMConfig();
-        
+        // Check if NotebookLM credentials are available
+        // This will be checked via the Python script which uses browser auth
         res.json({
             success: true,
             data: {
                 connected: true,
-                hasApiKey: !!config?.apiKey,
-                projectId: config?.projectId
+                authType: 'browser',
+                message: 'Uses browser-based authentication with your NotebookLM account'
             }
         });
     } catch (error) {
@@ -212,28 +107,19 @@ router.get('/config', async (req, res, next) => {
 });
 
 /**
- * POST /api/notebooklm/session/start
- * Start a NotebookLM session - fetches credentials from VPS
+ * POST /api/notebooklm/login
+ * Trigger browser login for NotebookLM (if not already authenticated)
  */
-router.post('/session/start', async (req, res, next) => {
+router.post('/login', async (req, res, next) => {
     try {
-        const config = await getNotebookLMConfig();
-        
-        if (!config?.apiKey) {
-            return res.status(401).json({
-                success: false,
-                message: 'NotebookLM credentials not available'
-            });
-        }
-
-        // Session started - credentials fetched and cached
+        // This would open browser for login if needed
+        // For now, we assume the user will run "notebooklm login" once on the server
         res.json({
             success: true,
-            message: 'NotebookLM session started',
-            expiresIn: CONFIG_CACHE_DURATION
+            message: 'NotebookLM uses browser authentication. Run "notebooklm login" on server if not already authenticated.'
         });
     } catch (error) {
-        console.error('[NotebookLM] Session start error:', error);
+        console.error('[NotebookLM] Login error:', error);
         res.status(500).json({
             success: false,
             message: error.message
@@ -242,40 +128,17 @@ router.post('/session/start', async (req, res, next) => {
 });
 
 /**
- * POST /api/notebooklm/session/end
- * End NotebookLM session - clear cached credentials
- */
-router.post('/session/end', async (req, res, next) => {
-    clearNotebookLMConfig();
-    
-    res.json({
-        success: true,
-        message: 'NotebookLM session ended'
-    });
-});
-
-/**
  * POST /api/notebooklm/upload
- * Upload audio recording and generate summary
+ * Upload audio recording and generate summary using NotebookLM
  */
 router.post('/upload', async (req, res, next) => {
     try {
-        const { meetingId, audioData, duration } = req.body;
+        const { meetingId, audioData, duration, meetingTitle } = req.body;
 
         if (!meetingId || !audioData) {
             return res.status(400).json({
                 success: false,
                 message: 'Missing meetingId or audioData'
-            });
-        }
-
-        // Get configuration (starts session if not active)
-        const config = await getNotebookLMConfig();
-        
-        if (!config?.apiKey) {
-            return res.status(401).json({
-                success: false,
-                message: 'NotebookLM session not active. Please start session first.'
             });
         }
 
@@ -294,7 +157,7 @@ router.post('/upload', async (req, res, next) => {
 
         // Create recording record in database
         const recordingResult = await db.query(
-            `INSERT INTO meeting_recordings 
+            `INSERT INTO meeting_recordings
              (meeting_id, file_name, file_path, file_size, duration_seconds, mime_type, status)
              VALUES ($1, $2, $3, $4, $5, $6, $7)
              RETURNING id`,
@@ -304,47 +167,49 @@ router.post('/upload', async (req, res, next) => {
         const recordingId = recordingResult.rows[0].id;
 
         try {
-            // Step 1: Transcribe audio
-            console.log('[NotebookLM] Transcribing audio...');
-            const transcript = await transcribeAudioWithGemini(audioBuffer, config);
+            // Process audio through NotebookLM Python service
+            console.log('[NotebookLM] Processing audio with NotebookLM...');
 
-            // Step 2: Generate summary
-            console.log('[NotebookLM] Generating summary...');
-            const summary = await generateSummaryWithGemini(transcript, config);
+            const notebookResult = await runNotebookLMService(
+                filePath,
+                meetingTitle || `Meeting ${meetingId}`
+            );
 
-            // Step 3: Save summary to file
-            const summaryFilePath = saveSummaryToFile(summary, meetingId);
+            if (!notebookResult.success) {
+                throw new Error(notebookResult.error || 'NotebookLM processing failed');
+            }
+
+            // Save summary to file
+            const summaryFilePath = saveSummaryToFile(notebookResult.summary, meetingId);
 
             // Update recording record with results
             await db.query(
-                `UPDATE meeting_recordings 
-                 SET transcript = $1, summary = $2, summary_file_path = $3, 
+                `UPDATE meeting_recordings
+                 SET transcript = $1, summary = $2, summary_file_path = $3,
                      status = 'completed', processed_at = CURRENT_TIMESTAMP
                  WHERE id = $4`,
-                [transcript, summary, summaryFilePath, recordingId]
+                [notebookResult.summary, notebookResult.summary, summaryFilePath, recordingId]
             );
 
             // Update meeting with recording and summary URLs
             await db.query(
-                `UPDATE meetings 
+                `UPDATE meetings
                  SET recording_url = $1, summary_url = $2, recording_status = 'completed'
                  WHERE id = $3`,
                 [`/uploads/recordings/${fileName}`, summaryFilePath, meetingId]
             );
 
-            // End session after completion
-            clearNotebookLMConfig();
-
             res.json({
                 success: true,
                 data: {
                     recordingId,
-                    transcript,
-                    summary,
+                    summary: notebookResult.summary,
                     summaryFilePath,
-                    audioFilePath: `/uploads/recordings/${fileName}`
+                    audioFilePath: `/uploads/recordings/${fileName}`,
+                    audioOverviewFile: notebookResult.audioFile,
+                    quizFile: notebookResult.quizFile
                 },
-                message: 'Recording processed successfully'
+                message: 'Recording processed successfully with NotebookLM'
             });
 
         } catch (processingError) {
@@ -460,6 +325,58 @@ router.get('/status/:meetingId', async (req, res, next) => {
         });
     } catch (error) {
         console.error('[NotebookLM] Status error:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+/**
+ * DELETE /api/notebooklm/recording/:recordingId
+ * Delete a recording
+ */
+router.delete('/recording/:recordingId', async (req, res, next) => {
+    try {
+        const { recordingId } = req.params;
+
+        // Get recording first
+        const result = await db.query(
+            'SELECT * FROM meeting_recordings WHERE id = $1',
+            [recordingId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Recording not found'
+            });
+        }
+
+        const recording = result.rows[0];
+
+        // Delete file if exists
+        if (recording.file_path && fs.existsSync(recording.file_path)) {
+            fs.unlinkSync(recording.file_path);
+        }
+
+        // Delete summary file if exists
+        if (recording.summary_file_path) {
+            const summaryPath = path.join(__dirname, '..', recording.summary_file_path);
+            if (fs.existsSync(summaryPath)) {
+                fs.unlinkSync(summaryPath);
+            }
+        }
+
+        // Delete from database
+        await db.query('DELETE FROM meeting_recordings WHERE id = $1', [recordingId]);
+
+        res.json({
+            success: true,
+            message: 'Recording deleted successfully'
+        });
+    } catch (error) {
+        console.error('[NotebookLM] Delete recording error:', error);
         res.status(500).json({
             success: false,
             message: error.message
