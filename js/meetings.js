@@ -173,25 +173,29 @@ class MeetingsManager {
     const date = new Date(meeting.startTime);
     const endDate = new Date(meeting.endTime);
     const duration = this.calculateDuration(meeting.startTime, meeting.endTime);
-    
+
     const typeLabel = meeting.isRecurring ? 'Recurring' : 'One-time';
-    const recurrenceLabel = meeting.recurrencePattern ? `• ${meeting.recurrencePattern}` : '';
-    
+    const recurrenceLabel = meeting.recurrencePattern ? ` • ${meeting.recurrencePattern}` : '';
+    const typeBadgeClass = meeting.isRecurring ? 'bg-yellow-500/20 text-yellow-400' : 'bg-primary-500/20 text-primary-400';
+
     const statusClass = this.getStatusClass(meeting.status);
     const statusLabel = meeting.status || 'Scheduled';
 
     return `
-      <div class="grid grid-cols-4 gap-4 py-4 items-center hover:bg-slate-700/20 cursor-pointer border-b border-slate-700/30 last:border-0" onclick="meetingsManager.openMeetingDetail('${meeting.id}')">
-        <div>
-          <h4 class="font-medium text-white">${meeting.title}</h4>
-          <p class="text-xs text-slate-400">${typeLabel} ${recurrenceLabel}</p>
+      <div class="group bg-slate-800/40 hover:bg-slate-700/30 border border-slate-700/30 hover:border-primary-500/30 rounded-xl p-4 cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/5" onclick="meetingsManager.openMeetingDetail('${meeting.id}')">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${typeBadgeClass}">
+            ${typeLabel}
+          </span>
+          <span class="text-xs text-slate-500">${meeting.id}</span>
         </div>
-        <div>
-          <p class="text-white">${this.formatDate(date)}</p>
-          <p class="text-xs text-slate-400">${this.formatTime(date)} - ${this.formatTime(endDate)}</p>
+        <h4 class="font-semibold text-white mb-2 group-hover:text-primary-400 transition-colors">${meeting.title}</h4>
+        <div class="flex items-center gap-4 text-sm">
+          <span class="text-primary-400">${this.formatDate(date)}</span>
+          <span class="text-slate-400">${this.formatTime(date)} - ${this.formatTime(endDate)}</span>
+          <span class="text-slate-300">${duration}</span>
+          <span class="text-slate-400">${meeting.location || 'Virtual'}</span>
         </div>
-        <div class="text-slate-300">${duration}</div>
-        <div class="text-slate-300">${meeting.location || 'Virtual'}</div>
       </div>
     `;
   }
@@ -312,22 +316,23 @@ class MeetingsManager {
       .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))[0];
 
     if (!upcoming) {
-      container.innerHTML = `
-        <div class="text-center py-4">
-          <p class="text-sm text-slate-400">No upcoming meetings</p>
-        </div>
-      `;
+      document.getElementById('next-meeting-box')?.style.setProperty('display', 'none');
+      const noMeeting = document.getElementById('no-next-meeting');
+      if (noMeeting) noMeeting.style.display = 'block';
       return;
     }
 
     const startDate = new Date(upcoming.startTime);
-    container.innerHTML = `
-      <div class="p-3 bg-primary-500/10 border border-primary-500/30 rounded-lg">
-        <h4 class="font-medium text-white mb-1">${upcoming.title}</h4>
-        <p class="text-sm text-slate-400">${this.formatDate(startDate)} at ${this.formatTime(startDate)}</p>
-        <p class="text-xs text-slate-500 mt-1">${this.calculateDuration(upcoming.startTime, upcoming.endTime)}</p>
-      </div>
-    `;
+    const nextMeetingBox = document.getElementById('next-meeting-box');
+    const noMeeting = document.getElementById('no-next-meeting');
+
+    if (nextMeetingBox) {
+      nextMeetingBox.style.display = 'block';
+      document.getElementById('next-meeting-title').textContent = upcoming.title;
+      document.getElementById('next-meeting-date').textContent = `${this.formatDate(startDate)} at ${this.formatTime(startDate)}`;
+      document.getElementById('next-meeting-duration').textContent = this.calculateDuration(upcoming.startTime, upcoming.endTime);
+    }
+    if (noMeeting) noMeeting.style.display = 'none';
   }
 
   // Open meeting detail modal
@@ -459,43 +464,62 @@ class MeetingsManager {
     }
   }
 
-  // Render participants as simple list
+  // Render participants as simple list with response status
   _renderParticipantsList(participants) {
     const container = document.getElementById('meeting-participants-list');
     if (!container) return;
 
-    const teamMembers = (window.app && app.state && app.state.teamMembers) || [];
-
-    if (teamMembers.length === 0) {
-      container.innerHTML = '<p class="text-sm text-slate-500 p-3">No team members available</p>';
+    if (!participants || participants.length === 0) {
+      container.innerHTML = '<p class="text-sm text-slate-500 text-center py-4">No participants added yet</p>';
       return;
     }
 
-    const selectedIds = new Set(participants.map(p => String(p.id)));
+    const colors = ['bg-indigo-500', 'bg-violet-500', 'bg-sky-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500'];
 
-    container.innerHTML = teamMembers.map(member => {
-      const fullName = `${member.firstName} ${member.lastName}`;
-      const checked = selectedIds.has(String(member.id));
-      const colors = ['bg-indigo-500', 'bg-violet-500', 'bg-sky-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500'];
+    container.innerHTML = participants.map((p, idx) => {
+      const fullName = p.name || 'Unknown';
       const ci = fullName.charCodeAt(0) % colors.length;
+      const response = p.response || 'pending';
+
+      const responseClasses = {
+        pending: 'bg-slate-600/50 text-slate-400',
+        accepted: 'bg-green-500/20 text-green-400',
+        declined: 'bg-red-500/20 text-red-400',
+        tentative: 'bg-yellow-500/20 text-yellow-400'
+      };
+
+      const responseLabels = {
+        pending: 'Pending',
+        accepted: 'Going',
+        declined: 'Declined',
+        tentative: 'Tentative'
+      };
 
       return `
-        <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/30 cursor-pointer transition-colors">
-          <div class="relative">
-            <div class="w-8 h-8 rounded-full ${colors[ci]} flex items-center justify-center text-white text-xs font-semibold">
-              ${this.getInitials(fullName)}
+        <div class="grid grid-cols-[1fr_200px] gap-2 items-center py-2 border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors" data-participant-id="${p.id}">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full ${colors[ci]} flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+              ${fullName.split(' ').map(n => n[0]).join('').substring(0, 2)}
             </div>
-            ${checked ? '<div class="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-primary-500 rounded-full flex items-center justify-center"><svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></div>' : ''}
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-white truncate">${fullName}</p>
+              ${p.email ? `<p class="text-xs text-slate-500 truncate">${p.email}</p>` : ''}
+            </div>
           </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium text-white truncate">${fullName}</p>
-            ${member.email ? `<p class="text-xs text-slate-500 truncate">${member.email}</p>` : ''}
+          <div class="flex items-center justify-center gap-2">
+            <select onchange="updateParticipantResponse('${p.id}', this.value)"
+              class="text-xs px-2 py-1.5 rounded-lg border-0 cursor-pointer ${responseClasses[response]} bg-slate-700">
+              <option value="pending" ${response === 'pending' ? 'selected' : ''}>Pending</option>
+              <option value="accepted" ${response === 'accepted' ? 'selected' : ''}>Going</option>
+              <option value="declined" ${response === 'declined' ? 'selected' : ''}>Declined</option>
+              <option value="tentative" ${response === 'tentative' ? 'selected' : ''}>Tentative</option>
+            </select>
+            <button type="button" onclick="removeParticipant('${p.id}')"
+              class="p-1 text-slate-500 hover:text-red-400 transition-colors" title="Remove">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
           </div>
-          <input type="checkbox" value="${member.id}" data-name="${fullName}" data-type="participants"
-            ${checked ? 'checked' : ''}
-            onchange="meetingsManager._onParticipantCheckboxChange(this)"
-            class="w-4 h-4 rounded border-slate-600 bg-slate-700 text-primary-500 focus:ring-primary-500 focus:ring-offset-0">
-        </label>
+        </div>
       `;
     }).join('');
   }
@@ -1630,4 +1654,143 @@ window.toggleRecording = function() {
     if (statusText) statusText.textContent = 'Not recording';
   }
 };
+
+// ==================
+// Participant Search & Response Functions
+// ==================
+
+// Search and add participant from input
+window.addParticipantFromSearch = function() {
+  const searchInput = document.getElementById('meeting-participants-search');
+  const searchResults = document.getElementById('meeting-participants-search-results');
+  if (!searchInput || !searchResults) return;
+
+  const query = searchInput.value.trim().toLowerCase();
+  if (!query) return;
+
+  const teamMembers = (window.app && app.state && app.state.teamMembers) || [];
+  const matchingMember = teamMembers.find(m => {
+    const fullName = `${m.firstName} ${m.lastName}`.toLowerCase();
+    return fullName === query || m.email?.toLowerCase() === query;
+  });
+
+  if (matchingMember && meetingsManager.currentMeeting) {
+    // Add participant with default response status
+    meetingsManager.currentMeeting.participants = meetingsManager.currentMeeting.participants || [];
+    const exists = meetingsManager.currentMeeting.participants.some(p => String(p.id) === String(matchingMember.id));
+
+    if (!exists) {
+      meetingsManager.currentMeeting.participants.push({
+        id: matchingMember.id,
+        name: `${matchingMember.firstName} ${matchingMember.lastName}`,
+        email: matchingMember.email,
+        response: 'pending' // pending, accepted, declined, tentative
+      });
+      meetingsManager._renderParticipantsList(meetingsManager.currentMeeting.participants);
+      searchInput.value = '';
+      searchResults.classList.add('hidden');
+      searchResults.innerHTML = '';
+      showToast(`Added ${matchingMember.firstName} ${matchingMember.lastName}`, 'success');
+    } else {
+      showToast('Participant already added', 'warning');
+    }
+  } else if (!matchingMember) {
+    // Show search results
+    const filtered = teamMembers.filter(m => {
+      const fullName = `${m.firstName} ${m.lastName}`.toLowerCase();
+      return fullName.includes(query) || m.email?.toLowerCase().includes(query);
+    });
+
+    if (filtered.length > 0) {
+      searchResults.innerHTML = filtered.slice(0, 5).map(member => {
+        const fullName = `${member.firstName} ${member.lastName}`;
+        return `
+          <button type="button"
+            onclick="addParticipantById('${member.id}')"
+            class="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer transition-colors text-left">
+            <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-semibold">
+              ${member.firstName[0]}${member.lastName[0]}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-white truncate">${fullName}</p>
+              <p class="text-xs text-slate-500 truncate">${member.email || ''}</p>
+            </div>
+          </button>
+        `;
+      }).join('');
+      searchResults.classList.remove('hidden');
+    } else {
+      searchResults.innerHTML = '<p class="text-sm text-slate-500 p-2">No members found</p>';
+      searchResults.classList.remove('hidden');
+    }
+  }
+};
+
+// Add participant by ID
+window.addParticipantById = function(memberId) {
+  const teamMembers = (window.app && app.state && app.state.teamMembers) || [];
+  const member = teamMembers.find(m => String(m.id) === String(memberId));
+
+  if (member && meetingsManager.currentMeeting) {
+    meetingsManager.currentMeeting.participants = meetingsManager.currentMeeting.participants || [];
+    const exists = meetingsManager.currentMeeting.participants.some(p => String(p.id) === String(memberId));
+
+    if (!exists) {
+      meetingsManager.currentMeeting.participants.push({
+        id: member.id,
+        name: `${member.firstName} ${member.lastName}`,
+        email: member.email,
+        response: 'pending'
+      });
+      meetingsManager._renderParticipantsList(meetingsManager.currentMeeting.participants);
+      showToast(`Added ${member.firstName} ${member.lastName}`, 'success');
+    }
+  }
+
+  // Clear search
+  const searchInput = document.getElementById('meeting-participants-search');
+  const searchResults = document.getElementById('meeting-participants-search-results');
+  if (searchInput) searchInput.value = '';
+  if (searchResults) {
+    searchResults.classList.add('hidden');
+    searchResults.innerHTML = '';
+  }
+};
+
+// Clear participant search
+window.clearParticipantSearch = function() {
+  const searchInput = document.getElementById('meeting-participants-search');
+  const searchResults = document.getElementById('meeting-participants-search-results');
+  if (searchInput) searchInput.value = '';
+  if (searchResults) {
+    searchResults.classList.add('hidden');
+    searchResults.innerHTML = '';
+  }
+};
+
+// Update participant response status
+window.updateParticipantResponse = function(participantId, response) {
+  if (!meetingsManager.currentMeeting || !meetingsManager.currentMeeting.participants) return;
+
+  const participant = meetingsManager.currentMeeting.participants.find(p => String(p.id) === String(participantId));
+  if (participant) {
+    participant.response = response;
+    meetingsManager._renderParticipantsList(meetingsManager.currentMeeting.participants);
+  }
+};
+
+// Remove participant
+window.removeParticipant = function(participantId) {
+  if (!meetingsManager.currentMeeting || !meetingsManager.currentMeeting.participants) return;
+
+  const idx = meetingsManager.currentMeeting.participants.findIndex(p => String(p.id) === String(participantId));
+  if (idx !== -1) {
+    const removed = meetingsManager.currentMeeting.participants.splice(idx, 1)[0];
+    meetingsManager._renderParticipantsList(meetingsManager.currentMeeting.participants);
+    showToast(`Removed ${removed.name}`, 'success');
+  }
+};
+
+// Render participants list with response status
+window.meetingsManager?._renderParticipantsList;
 
