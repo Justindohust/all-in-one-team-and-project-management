@@ -691,16 +691,12 @@ class DigiHubAPI {
     return this.request('/notebooklm/config');
   }
 
-  async startNotebookLMSession() {
-    // Uses browser-based auth now, no need to start session
-    return this.request('/notebooklm/login', {
-      method: 'POST'
+  // Generate AI summary from text (notes/transcript)
+  async generateSummary(meetingId, text, meetingTitle) {
+    return this.request('/notebooklm/summarize', {
+      method: 'POST',
+      body: JSON.stringify({ meetingId, text, meetingTitle })
     });
-  }
-
-  async endNotebookLMSession() {
-    // No session to end with browser-based auth
-    return { success: true };
   }
 
   async uploadRecording(meetingId, audioData, duration, meetingTitle) {

@@ -1,13 +1,12 @@
 /**
- * NotebookLM Integration Routes
- * Uses browser-based authentication with user's NotebookLM account
- * No Gemini API key required
+ * AI Summary Routes
+ * Uses Google AI Studio (free tier) for text summarization
+ * No credit card required - free API access
  */
 
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
-const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
@@ -17,45 +16,65 @@ const { v4: uuidv4 } = require('uuid');
 // ==================
 
 /**
- * Run Python NotebookLM service
+ * Call Google AI Studio API for summarization
  */
-function runNotebookLMService(audioPath, meetingTitle) {
-    return new Promise((resolve, reject) => {
-        const scriptPath = path.join(__dirname, '..', 'scripts', 'notebooklm_service.py');
+async function generateSummaryWithAI(text, meetingTitle = 'Meeting') {
+    const apiKey = process.env.GOOGLE_AI_API_KEY;
 
-        const python = spawn('python', [scriptPath, audioPath, meetingTitle], {
-            cwd: path.join(__dirname, '..')
-        });
+    if (!apiKey) {
+        throw new Error('Google AI API key not configured. Please add GOOGLE_AI_API_KEY to .env file.');
+    }
 
-        let stdout = '';
-        let stderr = '';
+    const prompt = `You are a professional meeting summarizer. Please analyze the following meeting notes/transcript and create a comprehensive summary.
 
-        python.stdout.on('data', (data) => {
-            stdout += data.toString();
-        });
+Meeting Title: ${meetingTitle}
 
-        python.stderr.on('data', (data) => {
-            stderr += data.toString();
-        });
+Please provide:
+1. **Key Topics Discussed**: Main subjects covered in the meeting
+2. **Important Decisions**: Any decisions made during the meeting
+3. **Action Items**: Tasks assigned with owners if mentioned
+4. **Next Steps**: Suggested follow-up actions
 
-        python.on('close', (code) => {
-            if (code !== 0) {
-                console.error('[NotebookLM] Python script error:', stderr);
-                reject(new Error(stderr || 'Python script failed'));
-            } else {
-                try {
-                    const result = JSON.parse(stdout);
-                    resolve(result);
-                } catch (e) {
-                    reject(new Error('Failed to parse Python output'));
+Meeting Notes:
+${text}
+
+Please provide a well-structured summary in markdown format:`;
+
+    const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{
+                        text: prompt
+                    }]
+                }],
+                generationConfig: {
+                    temperature: 0.7,
+                    maxOutputTokens: 2048,
+                    topP: 0.95,
+                    topK: 40
                 }
-            }
-        });
+            })
+        }
+    );
 
-        python.on('error', (err) => {
-            reject(err);
-        });
-    });
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Google AI API error: ${error}`);
+    }
+
+    const data = await response.json();
+
+    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+        return data.candidates[0].content.parts[0].text;
+    }
+
+    throw new Error('Failed to generate summary');
 }
 
 /**
@@ -83,22 +102,24 @@ function saveSummaryToFile(summary, meetingId) {
 
 /**
  * GET /api/notebooklm/config
- * Get NotebookLM configuration status
+ * Check if AI API is configured
  */
-router.get('/config', async (req, res, next) => {
+router.get('/config', async (req, res) => {
     try {
-        // Check if NotebookLM credentials are available
-        // This will be checked via the Python script which uses browser auth
+        const apiKey = process.env.GOOGLE_AI_API_KEY;
+
         res.json({
             success: true,
             data: {
-                connected: true,
-                authType: 'browser',
-                message: 'Uses browser-based authentication with your NotebookLM account'
+                connected: !!apiKey,
+                provider: 'Google AI Studio (Free)',
+                message: apiKey
+                    ? 'AI summarization is enabled. Add meeting notes and click "Generate Summary" to get AI-powered insights.'
+                    : 'Please configure GOOGLE_AI_API_KEY in backend/.env to enable AI summarization.'
             }
         });
     } catch (error) {
-        console.error('[NotebookLM] Config error:', error);
+        console.error('[AI Summary] Config error:', error);
         res.status(500).json({
             success: false,
             message: error.message
@@ -107,19 +128,67 @@ router.get('/config', async (req, res, next) => {
 });
 
 /**
- * POST /api/notebooklm/login
- * Trigger browser login for NotebookLM (if not already authenticated)
+ * POST /api/notebooklm/summarize
+ * Generate AI summary from text (notes/transcript)
  */
-router.post('/login', async (req, res, next) => {
+router.post('/summarize', async (req, res) => {
     try {
-        // This would open browser for login if needed
-        // For now, we assume the user will run "notebooklm login" once on the server
+        const { meetingId, text, meetingTitle } = req.body;
+
+        if (!meetingId || !text) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing meetingId or text content'
+            });
+        }
+
+        if (text.length < 50) {
+            return res.status(400).json({
+                success: false,
+                message: 'Text content is too short. Please provide more detailed meeting notes.'
+            });
+        }
+
+        console.log(`[AI Summary] Generating summary for meeting ${meetingId}...`);
+
+        // Generate summary using Google AI
+        const summary = await generateSummaryWithAI(text, meetingTitle || `Meeting ${meetingId}`);
+
+        // Save summary to file
+        const summaryFilePath = saveSummaryToFile(summary, meetingId);
+
+        // Update meeting record
+        await db.query(
+            `UPDATE meetings
+             SET summary_url = $1, recording_status = 'completed'
+             WHERE id = $2`,
+            [summaryFilePath, meetingId]
+        );
+
+        // Save to meeting_recordings table if exists
+        try {
+            await db.query(
+                `INSERT INTO meeting_recordings
+                 (meeting_id, transcript, summary, summary_file_path, status, created_at)
+                 VALUES ($1, $2, $3, $4, 'completed', CURRENT_TIMESTAMP)`,
+                [meetingId, text, summary, summaryFilePath]
+            );
+        } catch (e) {
+            // Table might not exist, ignore
+            console.log('[AI Summary] Recording table not available');
+        }
+
         res.json({
             success: true,
-            message: 'NotebookLM uses browser authentication. Run "notebooklm login" on server if not already authenticated.'
+            data: {
+                summary: summary,
+                summaryFilePath: summaryFilePath
+            },
+            message: 'Summary generated successfully!'
         });
+
     } catch (error) {
-        console.error('[NotebookLM] Login error:', error);
+        console.error('[AI Summary] Generate error:', error);
         res.status(500).json({
             success: false,
             message: error.message
@@ -129,11 +198,11 @@ router.post('/login', async (req, res, next) => {
 
 /**
  * POST /api/notebooklm/upload
- * Upload audio recording and generate summary using NotebookLM
+ * Upload audio recording (store only, no AI processing)
  */
-router.post('/upload', async (req, res, next) => {
+router.post('/upload', async (req, res) => {
     try {
-        const { meetingId, audioData, duration, meetingTitle } = req.body;
+        const { meetingId, audioData, duration } = req.body;
 
         if (!meetingId || !audioData) {
             return res.status(400).json({
@@ -156,74 +225,36 @@ router.post('/upload', async (req, res, next) => {
         fs.writeFileSync(filePath, audioBuffer);
 
         // Create recording record in database
-        const recordingResult = await db.query(
-            `INSERT INTO meeting_recordings
-             (meeting_id, file_name, file_path, file_size, duration_seconds, mime_type, status)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)
-             RETURNING id`,
-            [meetingId, fileName, filePath, audioBuffer.length, duration || 0, 'audio/webm', 'processing']
-        );
-
-        const recordingId = recordingResult.rows[0].id;
-
         try {
-            // Process audio through NotebookLM Python service
-            console.log('[NotebookLM] Processing audio with NotebookLM...');
-
-            const notebookResult = await runNotebookLMService(
-                filePath,
-                meetingTitle || `Meeting ${meetingId}`
-            );
-
-            if (!notebookResult.success) {
-                throw new Error(notebookResult.error || 'NotebookLM processing failed');
-            }
-
-            // Save summary to file
-            const summaryFilePath = saveSummaryToFile(notebookResult.summary, meetingId);
-
-            // Update recording record with results
             await db.query(
-                `UPDATE meeting_recordings
-                 SET transcript = $1, summary = $2, summary_file_path = $3,
-                     status = 'completed', processed_at = CURRENT_TIMESTAMP
-                 WHERE id = $4`,
-                [notebookResult.summary, notebookResult.summary, summaryFilePath, recordingId]
+                `INSERT INTO meeting_recordings
+                 (meeting_id, file_name, file_path, file_size, duration_seconds, mime_type, status)
+                 VALUES ($1, $2, $3, $4, $5, $6, 'pending')
+                 RETURNING id`,
+                [meetingId, fileName, filePath, audioBuffer.length, duration || 0, 'audio/webm']
             );
-
-            // Update meeting with recording and summary URLs
-            await db.query(
-                `UPDATE meetings
-                 SET recording_url = $1, summary_url = $2, recording_status = 'completed'
-                 WHERE id = $3`,
-                [`/uploads/recordings/${fileName}`, summaryFilePath, meetingId]
-            );
-
-            res.json({
-                success: true,
-                data: {
-                    recordingId,
-                    summary: notebookResult.summary,
-                    summaryFilePath,
-                    audioFilePath: `/uploads/recordings/${fileName}`,
-                    audioOverviewFile: notebookResult.audioFile,
-                    quizFile: notebookResult.quizFile
-                },
-                message: 'Recording processed successfully with NotebookLM'
-            });
-
-        } catch (processingError) {
-            // Mark recording as failed
-            await db.query(
-                `UPDATE meeting_recordings SET status = 'failed' WHERE id = $1`,
-                [recordingId]
-            );
-
-            throw processingError;
+        } catch (e) {
+            console.log('[AI Summary] Recording table not available');
         }
 
+        // Update meeting
+        await db.query(
+            `UPDATE meetings
+             SET recording_url = $1, recording_status = 'pending'
+             WHERE id = $2`,
+            [`/uploads/recordings/${fileName}`, meetingId]
+        );
+
+        res.json({
+            success: true,
+            data: {
+                audioFilePath: `/uploads/recordings/${fileName}`,
+                message: 'Audio recorded successfully. Add meeting notes and use AI to generate summary.'
+            }
+        });
+
     } catch (error) {
-        console.error('[NotebookLM] Upload error:', error);
+        console.error('[AI Summary] Upload error:', error);
         res.status(500).json({
             success: false,
             message: error.message
@@ -235,34 +266,22 @@ router.post('/upload', async (req, res, next) => {
  * GET /api/notebooklm/recording/:meetingId
  * Get recording and summary for a meeting
  */
-router.get('/recording/:meetingId', async (req, res, next) => {
+router.get('/recording/:meetingId', async (req, res) => {
     try {
         const { meetingId } = req.params;
 
-        const result = await db.query(
-            `SELECT mr.*, 
-                    u.first_name || ' ' || u.last_name as created_by_name
-             FROM meeting_recordings mr
-             LEFT JOIN users u ON mr.created_by = u.id
-             WHERE mr.meeting_id = $1
-             ORDER BY mr.created_at DESC
-             LIMIT 1`,
+        // Get from meetings table first
+        const meetingResult = await db.query(
+            'SELECT recording_url, summary_url FROM meetings WHERE id = $1',
             [meetingId]
         );
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'No recording found for this meeting'
-            });
-        }
-
-        const recording = result.rows[0];
+        let summaryContent = null;
+        let summaryFilePath = meetingResult.rows[0]?.summary_url;
 
         // Read summary file if exists
-        let summaryContent = null;
-        if (recording.summary_file_path) {
-            const fullPath = path.join(__dirname, '..', recording.summary_file_path);
+        if (summaryFilePath) {
+            const fullPath = path.join(__dirname, '..', summaryFilePath);
             if (fs.existsSync(fullPath)) {
                 summaryContent = fs.readFileSync(fullPath, 'utf8');
             }
@@ -271,12 +290,13 @@ router.get('/recording/:meetingId', async (req, res, next) => {
         res.json({
             success: true,
             data: {
-                ...recording,
-                summary: summaryContent || recording.summary
+                recordingUrl: meetingResult.rows[0]?.recording_url,
+                summaryUrl: summaryFilePath,
+                summary: summaryContent
             }
         });
     } catch (error) {
-        console.error('[NotebookLM] Get recording error:', error);
+        console.error('[AI Summary] Get recording error:', error);
         res.status(500).json({
             success: false,
             message: error.message
@@ -288,98 +308,25 @@ router.get('/recording/:meetingId', async (req, res, next) => {
  * GET /api/notebooklm/status/:meetingId
  * Get processing status for a meeting
  */
-router.get('/status/:meetingId', async (req, res, next) => {
+router.get('/status/:meetingId', async (req, res) => {
     try {
         const { meetingId } = req.params;
 
         const result = await db.query(
-            `SELECT status, transcript, summary, summary_file_path, 
-                    created_at, processed_at
-             FROM meeting_recordings 
-             WHERE meeting_id = $1
-             ORDER BY created_at DESC
-             LIMIT 1`,
+            `SELECT recording_status FROM meetings WHERE id = $1`,
             [meetingId]
         );
-
-        if (result.rows.length === 0) {
-            return res.json({
-                success: true,
-                data: {
-                    hasRecording: false,
-                    status: null
-                }
-            });
-        }
-
-        const recording = result.rows[0];
 
         res.json({
             success: true,
             data: {
-                hasRecording: true,
-                status: recording.status,
-                createdAt: recording.created_at,
-                processedAt: recording.processed_at
+                status: result.rows[0]?.recording_status || 'no_recording'
             }
         });
     } catch (error) {
-        console.error('[NotebookLM] Status error:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
-});
-
-/**
- * DELETE /api/notebooklm/recording/:recordingId
- * Delete a recording
- */
-router.delete('/recording/:recordingId', async (req, res, next) => {
-    try {
-        const { recordingId } = req.params;
-
-        // Get recording first
-        const result = await db.query(
-            'SELECT * FROM meeting_recordings WHERE id = $1',
-            [recordingId]
-        );
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Recording not found'
-            });
-        }
-
-        const recording = result.rows[0];
-
-        // Delete file if exists
-        if (recording.file_path && fs.existsSync(recording.file_path)) {
-            fs.unlinkSync(recording.file_path);
-        }
-
-        // Delete summary file if exists
-        if (recording.summary_file_path) {
-            const summaryPath = path.join(__dirname, '..', recording.summary_file_path);
-            if (fs.existsSync(summaryPath)) {
-                fs.unlinkSync(summaryPath);
-            }
-        }
-
-        // Delete from database
-        await db.query('DELETE FROM meeting_recordings WHERE id = $1', [recordingId]);
-
         res.json({
             success: true,
-            message: 'Recording deleted successfully'
-        });
-    } catch (error) {
-        console.error('[NotebookLM] Delete recording error:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message
+            data: { status: 'unknown' }
         });
     }
 });

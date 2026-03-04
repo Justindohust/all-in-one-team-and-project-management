@@ -199,13 +199,15 @@ class MeetingsManager {
 
     return `
       <div class="group bg-slate-800/40 hover:bg-slate-700/30 border border-slate-700/30 hover:border-primary-500/30 rounded-xl p-4 cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/5" onclick="meetingsManager.openMeetingDetail('${meeting.id}')">
-        <div class="flex items-center gap-3 mb-2">
-          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${typeBadgeClass}">
+        <div class="flex items-center justify-between mb-2">
+          <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold ${statusClass}">
+            ${statusLabel.charAt(0).toUpperCase() + statusLabel.slice(1)}
+          </span>
+          <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${typeBadgeClass}">
             ${typeLabel}
           </span>
-          <span class="text-xs text-slate-500">${meeting.id}</span>
         </div>
-        <h4 class="font-semibold text-white mb-2 group-hover:text-primary-400 transition-colors">${meeting.title}</h4>
+        <h4 class="font-semibold text-white mb-3 group-hover:text-primary-400 transition-colors text-lg">${meeting.title}</h4>
         <div class="flex items-center gap-4 text-sm">
           <span class="text-primary-400">${this.formatDate(date)}</span>
           <span class="text-slate-400">${this.formatTime(date)} - ${this.formatTime(endDate)}</span>
@@ -786,9 +788,10 @@ class MeetingsManager {
 
   getStatusClass(status) {
     const classes = {
-      scheduled: 'bg-primary-500/20 text-primary-400',
-      completed: 'bg-success/20 text-success',
-      cancelled: 'bg-danger/20 text-danger'
+      scheduled: 'bg-indigo-500/20 text-indigo-400',
+      in_progress: 'bg-yellow-500/20 text-yellow-400',
+      completed: 'bg-green-500/20 text-green-400',
+      cancelled: 'bg-red-500/20 text-red-400'
     };
     return classes[status] || classes.scheduled;
   }
@@ -919,23 +922,16 @@ class MeetingsManager {
       // Show processing indicator in UI
       this.showProcessingIndicator();
 
-      // Start NotebookLM session first
-      await api.startNotebookLMSession();
-
-      // Upload to server for processing
+      // Upload to server (audio stored only, no AI processing)
       const meetingTitle = this.currentMeeting?.title || `Meeting ${this.recordingMeetingId}`;
       const result = await api.uploadRecording(
         this.recordingMeetingId,
         audioData,
-        duration,
-        meetingTitle
+        duration
       );
 
       if (result.success) {
-        showToast('Recording processed successfully!', 'success');
-
-        // End NotebookLM session
-        await api.endNotebookLMSession();
+        showToast('Recording saved successfully! You can now add meeting notes and generate AI summary.', 'success');
 
         // Reload meeting to get updated data
         await this.loadMeetings();
@@ -943,14 +939,12 @@ class MeetingsManager {
         // Load and display saved recordings
         await this.loadSavedRecordings(this.recordingMeetingId);
 
-        // Show summary if available
-        if (result.data?.summary) {
-          this.showSummaryModal(result.data.summary);
-        }
+        // Switch to Summary tab to let user add notes and generate AI summary
+        switchMeetingContentTab('summary');
 
         return true;
       } else {
-        throw new Error(result.message || 'Processing failed');
+        throw new Error(result.message || 'Upload failed');
       }
     } catch (error) {
       console.error('[Meetings] Failed to process recording:', error);
@@ -1986,4 +1980,81 @@ window.removeParticipant = function(participantId) {
 
 // Render participants list with response status
 window.meetingsManager?._renderParticipantsList;
+
+// Generate AI Summary
+window.generateAISummary = async function() {
+  const summaryEditor = document.getElementById('meeting-summary-editor');
+  const conclusionsEditor = document.getElementById('meeting-conclusions-editor');
+  const outputSection = document.getElementById('mtg-ai-summary-output');
+  const outputContent = document.getElementById('mtg-ai-summary-content');
+  const buttonSection = document.getElementById('mtg-ai-summary-section');
+
+  if (!summaryEditor) {
+    showToast('Summary editor not found', 'error');
+    return;
+  }
+
+  // Get text content from editors
+  const summaryText = summaryEditor.innerText || summaryEditor.textContent || '';
+  const conclusionsText = conclusionsEditor?.innerText || conclusionsEditor?.textContent || '';
+
+  // Combine text for AI processing
+  let combinedText = summaryText;
+  if (conclusionsText) {
+    combinedText += '\n\nConclusions:\n' + conclusionsText;
+  }
+
+  if (combinedText.trim().length < 20) {
+    showToast('Please add meeting notes first before generating summary', 'warning');
+    return;
+  }
+
+  // Check if current meeting is loaded
+  const meetingId = meetingsManager.currentMeeting?.id;
+  if (!meetingId) {
+    showToast('No meeting selected', 'error');
+    return;
+  }
+
+  // Show loading state
+  const originalButtonText = buttonSection.querySelector('button span');
+  const originalHTML = buttonSection.querySelector('button').innerHTML;
+  buttonSection.querySelector('button').innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg><span>Generating...</span>';
+  buttonSection.querySelector('button').disabled = true;
+
+  try {
+    const meetingTitle = meetingsManager.currentMeeting?.title || 'Meeting';
+    const result = await api.generateSummary(meetingId, combinedText, meetingTitle);
+
+    if (result.success && result.data?.summary) {
+      // Show output section
+      outputSection.classList.remove('hidden');
+      outputContent.innerHTML = result.data.summary.replace(/\n/g, '<br>');
+
+      showToast('AI Summary generated successfully!', 'success');
+    } else {
+      throw new Error(result.message || 'Failed to generate summary');
+    }
+  } catch (error) {
+    console.error('[Meetings] AI Summary error:', error);
+    showToast('Failed to generate summary: ' + error.message, 'error');
+  } finally {
+    // Restore button
+    buttonSection.querySelector('button').innerHTML = originalHTML;
+    buttonSection.querySelector('button').disabled = false;
+  }
+};
+
+// Copy AI Summary to clipboard
+window.copyAISummary = function() {
+  const outputContent = document.getElementById('mtg-ai-summary-content');
+  if (!outputContent) return;
+
+  const text = outputContent.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('Summary copied to clipboard', 'success');
+  }).catch(err => {
+    showToast('Failed to copy', 'error');
+  });
+};
 
