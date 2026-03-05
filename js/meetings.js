@@ -1981,7 +1981,7 @@ window.removeParticipant = function(participantId) {
 // Render participants list with response status
 window.meetingsManager?._renderParticipantsList;
 
-// Generate AI Summary
+// Generate AI Summary - Opens browser with meeting notes
 window.generateAISummary = async function() {
   const summaryEditor = document.getElementById('meeting-summary-editor');
   const conclusionsEditor = document.getElementById('meeting-conclusions-editor');
@@ -2001,7 +2001,7 @@ window.generateAISummary = async function() {
   // Combine text for AI processing
   let combinedText = summaryText;
   if (conclusionsText) {
-    combinedText += '\n\nConclusions:\n' + conclusionsText;
+    combinedText += '\n\n=== CONCLUSIONS & ACTION ITEMS ===\n' + conclusionsText;
   }
 
   if (combinedText.trim().length < 20) {
@@ -2009,39 +2009,87 @@ window.generateAISummary = async function() {
     return;
   }
 
-  // Check if current meeting is loaded
+  // Show instruction dialog
+  const instructions = `Follow these steps:
+
+1. A new browser tab will open with Google AI Studio
+2. Your meeting notes are already copied to clipboard
+3. Press Ctrl+V to paste the notes
+4. Ask AI to summarize: "Please summarize these meeting notes with: Key Topics, Decisions, Action Items"
+5. Copy the AI response
+6. Come back here and paste the summary
+
+Click OK to open Google AI Studio.`;
+
+  if (!confirm(instructions)) {
+    return;
+  }
+
+  try {
+    // Copy notes to clipboard
+    await navigator.clipboard.writeText(combinedText);
+    showToast('Meeting notes copied! Opening AI Studio...', 'info');
+
+    // Open Google AI Studio in new tab
+    window.open('https://aistudio.google.com/app/chats', '_blank');
+
+    // Show output section with instructions
+    outputSection.classList.remove('hidden');
+    outputContent.innerHTML = `
+      <div class="text-yellow-400 mb-4">
+        <p class="font-medium mb-2">📋 Follow these steps:</p>
+        <ol class="list-decimal list-inside space-y-1 text-slate-300">
+          <li>Paste your notes in AI Studio (Ctrl+V)</li>
+          <li>Ask: "Summarize with Key Topics, Decisions, Action Items"</li>
+          <li>Copy the AI response</li>
+          <li>Paste it here in the summary editor</li>
+        </ol>
+      </div>
+      <div class="mt-4">
+        <button onclick="showToast('Notes copied!', 'success')" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-sm">
+          📋 Copy Notes Again
+        </button>
+      </div>
+    `;
+
+  } catch (error) {
+    console.error('[Meetings] AI Summary error:', error);
+    showToast('Failed to copy notes: ' + error.message, 'error');
+  }
+};
+
+// Save AI Summary manually
+window.saveAISummary = async function() {
+  const outputContent = document.getElementById('mtg-ai-summary-content');
+  const summaryText = outputContent.innerText;
+
+  if (!summaryText || summaryText.length < 20) {
+    showToast('No summary to save', 'warning');
+    return;
+  }
+
   const meetingId = meetingsManager.currentMeeting?.id;
   if (!meetingId) {
     showToast('No meeting selected', 'error');
     return;
   }
 
-  // Show loading state
-  const originalButtonText = buttonSection.querySelector('button span');
-  const originalHTML = buttonSection.querySelector('button').innerHTML;
-  buttonSection.querySelector('button').innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg><span>Generating...</span>';
-  buttonSection.querySelector('button').disabled = true;
-
   try {
-    const meetingTitle = meetingsManager.currentMeeting?.title || 'Meeting';
-    const result = await api.generateSummary(meetingId, combinedText, meetingTitle);
+    const result = await api.saveSummary(meetingId, summaryText);
 
-    if (result.success && result.data?.summary) {
-      // Show output section
-      outputSection.classList.remove('hidden');
-      outputContent.innerHTML = result.data.summary.replace(/\n/g, '<br>');
-
-      showToast('AI Summary generated successfully!', 'success');
+    if (result.success) {
+      showToast('Summary saved successfully!', 'success');
+      // Also save to editor
+      const summaryEditor = document.getElementById('meeting-summary-editor');
+      if (summaryEditor) {
+        summaryEditor.innerText = summaryText;
+      }
     } else {
-      throw new Error(result.message || 'Failed to generate summary');
+      throw new Error(result.message);
     }
   } catch (error) {
-    console.error('[Meetings] AI Summary error:', error);
-    showToast('Failed to generate summary: ' + error.message, 'error');
-  } finally {
-    // Restore button
-    buttonSection.querySelector('button').innerHTML = originalHTML;
-    buttonSection.querySelector('button').disabled = false;
+    console.error('[Meetings] Save summary error:', error);
+    showToast('Failed to save summary', 'error');
   }
 };
 

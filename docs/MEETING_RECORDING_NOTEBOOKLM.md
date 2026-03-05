@@ -5,226 +5,105 @@
 This feature allows users to:
 - Record audio during meetings directly in the browser
 - Automatically upload recordings to the backend
-- Generate AI-powered summaries using free Google AI API
-- Download summaries as text files
+- Generate AI-powered summaries using **browser automation** (no API key required)
+- Copy meeting notes to clipboard and use free AI chat tools
 
 ## Architecture
 
 ```
-Browser → Backend API → Google AI Studio (Free API)
-                ↓
-         Local Storage (audio, summaries)
+Browser → Meeting Notes → Clipboard → AI Chat (Google AI Studio) → Copy Result → DigiHub
 ```
 
-**Note:** This implementation uses Google AI Studio which offers **free API access** without requiring a credit card.
+**Note:** This implementation uses **browser automation** - your meeting notes are copied to clipboard, you paste them into a free AI chat, and copy the result back. No API key required!
 
 ### Files Modified/Created
 
 | File | Description |
 |------|-------------|
-| `backend/database/20260225000001-add-meeting-recordings.sql` | Database schema for recordings |
 | `backend/routes/notebooklm.js` | Backend API routes |
-| `backend/server.js` | Added notebooklm routes & static file serving |
-| `js/api.js` | Added NotebookLM API methods |
-| `js/meetings.js` | Added recording functionality |
-| `views/meetings.html` | Added recording UI buttons |
+| `backend/scripts/meeting_summary_helper.js` | Browser automation helper |
+| `js/api.js` | Added API methods |
+| `js/meetings.js` | Added recording & AI summary functionality |
+| `views/meetings.html` | Recording UI & AI summary button |
 
 ## API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/notebooklm/config` | GET | Check API configuration |
-| `/api/notebooklm/summarize` | POST | Generate AI summary from text |
+| `/api/notebooklm/config` | GET | Check configuration |
+| `/api/notebooklm/summarize` | POST | Opens browser with notes |
+| `/api/notebooklm/save-summary` | POST | Save user-generated summary |
 | `/api/notebooklm/upload` | POST | Upload audio (storage only) |
 | `/api/notebooklm/recording/:meetingId` | GET | Get recording & summary |
 | `/api/notebooklm/status/:meetingId` | GET | Get processing status |
 
 ---
 
-# Hướng Dẫn Cài Đặt & Sử Dụng
+# Hướng Dẫn Sử Dụng
 
-## Bước 1: Lấy Google AI API Key (Miễn Phí)
+## Không Cần API Key!
 
-### 1.1. Đăng nhập Google AI Studio
+Với cách tiếp cận này, bạn **không cần bất kỳ API key nào**. Tất cả đều miễn phí!
 
-1. Truy cập: **https://aistudio.google.com/app/apikey**
-2. Đăng nhập bằng tài khoản Google
-3. Click **"Create API Key"**
-4. Copy API key được tạo
-
-### 1.2. Lưu API Key vào Backend
-
-Tạo file `.env` trong thư mục `backend/`:
-
-```bash
-# .env trong backend/
-GOOGLE_AI_API_KEY=AIzaSy....................................
-```
-
-**Lưu ý:** API key này miễn phí, có giới hạn usage nhưng đủ để test và sử dụng cá nhân.
-
----
-
-## Bước 2: Cấu Hình Database
-
-### 2.1. Chạy Database Migration
-
-```bash
-cd backend
-psql -U postgres -d digihub -f database/20260225000001-add-meeting-recordings.sql
-```
-
-Hoặc chạy qua script init:
-
-```bash
-cd backend
-node database/init.js
-```
-
----
-
-## Bước 3: Cấu Hình Backend
-
-### 3.1. Cập nhật Environment Variables
-
-Thêm vào file `backend/.env`:
-
-```bash
-# Google AI Configuration (Free)
-GOOGLE_AI_API_KEY=AIzaSy....................................
-
-# Optional: Fallback nếu dùng VPS
-# NOTEBOOKLM_VPS_URL=http://YOUR_VPS_IP:3001/api/notebooklm/config
-# NOTEBOOKLM_INTERNAL_KEY=your-secret-key
-```
-
-### 3.2. Khởi động Backend
-
-```bash
-cd backend
-npm start
-# hoặc
-node server.js
-```
-
----
-
-## Bước 4: Sử Dụng Tính Năng Recording
-
-### 4.1. Giao diện người dùng
+## Bước 1: Ghi Âm Cuộc Họp
 
 1. Mở ứng dụng DigiHub
 2. Vào mục **Meetings**
 3. Mở chi tiết một cuộc họp
-4. Sẽ thấy các nút recording trong tab **Recording**
+4. Chuyển sang tab **Recording**
+5. Click **"Start Recording"** để bắt đầu ghi âm
+6. Sau khi họp xong, click **"Stop Recording"**
+7. Audio được lưu lên server
 
-### 4.2. Quy trình ghi âm và tạo AI Summary
+## Bước 2: Tạo AI Summary
+
+Sau khi ghi âm (hoặc không cần ghi âm, chỉ cần viết ghi chú):
+
+1. Chuyển sang tab **Summary**
+2. Viết nội dung cuộc họp vào ô **Meeting Summary**
+3. Viết kết luận và action items vào ô **Conclusions & Action Items**
+4. Click nút **"Generate AI Summary"**
+
+### Quy Trình Tạo Summary:
 
 ```
-1. Ghi âm cuộc họp:
-   a. Click "Start Recording"
-      → Browser xin quyền microphone
-      → Bắt đầu ghi âm
+1. Click "Generate AI Summary"
+   → Meeting notes được copy vào clipboard
+   → Trình duyệt mở Google AI Studio
 
-   b. Cuộc họp diễn ra bình thường
-      → Audio được lưu trong browser
+2. Trong Google AI Studio:
+   → Paste ghi chú (Ctrl+V)
+   → Hỏi AI: "Summarize with Key Topics, Decisions, Action Items"
+   → Copy kết quả AI
 
-   c. Click "Stop Recording"
-      → Audio được convert sang base64
-      → Upload lên server và lưu vào thư mục recordings/
-
-2. Tạo AI Summary:
-   a. Sau khi ghi âm, hệ thống sẽ chuyển sang tab Summary
-   b. Người dùng viết ghi chú/nội dung cuộc họp vào ô text
-   c. Click nút "Generate AI Summary"
-   d. AI sẽ tạo summary từ nội dung người dùng nhập
-
-3. Xem kết quả:
-   → AI Summary hiển thị bên dưới
-   → Có thể copy nội dung
+3. Quay lại DigiHub:
+   → Paste kết quả vào ô Summary
+   → Click "Save" để lưu
 ```
 
----
+## Các AI Chat Miễn Phí Có Thể Dùng:
 
-## Bước 5: Kiểm Tra & Debug
-
-### 5.1. Kiểm tra API Key
-
-```bash
-# Test trực tiếp Google AI API
-curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"contents":[{"parts":[{"text":"Hello"}]}]}'
-```
-
-### 5.2. Kiểm tra Backend
-
-```bash
-curl http://localhost:3001/api/notebooklm/config
-```
-
-### 5.3. Xem logs
-
-```bash
-# Backend logs
-tail -f backend/logs/app.log
-```
-
----
-
-## Bước 6: Xử Lý Sự Cố Thường Gặp
-
-### Lỗi: "API key not valid"
-
-**Nguyên nhân:** Google AI API key không đúng hoặc hết hạn
-
-**Cách fix:**
-1. Vào https://aistudio.google.com/app/apikey
-2. Tạo API key mới
-3. Cập nhật vào file .env
-4. Restart backend
-
-### Lỗi: "Quota exceeded"
-
-**Nguyên nhân:** Đã hết quota miễn phí
-
-**Cách fix:**
-1. Chờ đến ngày hôm sau (quota reset)
-2. Hoặc đăng ký Google Cloud với billing để tăng quota
-
-### Lỗi: "MediaRecorder is not defined"
-
-**Nguyên nhân:** Browser không hỗ trợ MediaRecorder
-
-**Cách fix:**
-- Sử dụng Chrome/Edge/Firefox phiên bản mới
-- Đảm bảo HTTPS (required cho microphone)
-
-### Lỗi: Database "relation does not exist"
-
-**Nguyên nhân:** Chưa chạy migration
-
-**Cách fix:**
-```bash
-psql -U postgres -d digihub -f database/20260225000001-add-meeting-recordings.sql
-```
+| Trang Web | URL | Lưu ý |
+|-----------|-----|-------|
+| Google AI Studio | https://aistudio.google.com/app/chats | Cần đăng nhập Google |
+| HuggingFace Chat | https://huggingface.co/chat | Miễn phí, không cần login |
+| Poe | https://poe.com | Miễn phí với limit |
 
 ---
 
 ## Tóm Tắt Checklist
 
-- [ ] **Google AI:** Lấy API key từ https://aistudio.google.com/app/apikey
-- [ ] **Backend:** Thêm GOOGLE_AI_API_KEY vào .env
-- [ ] **Database:** Chạy migration 20260225000001-add-meeting-recordings.sql
-- [ ] **Backend:** Khởi động lại server
-- [ ] **Browser:** Test recording với HTTPS
+- [ ] **Ghi âm:** Sử dụng tab Recording để ghi âm cuộc họp
+- [ ] **Viết notes:** Viết ghi chú vào tab Summary
+- [ ] **Tạo summary:** Click "Generate AI Summary"
+- [ ] **Sử dụng AI:** Paste vào AI chat, copy kết quả
+- [ ] **Lưu:** Paste kết quả vào DigiHub và lưu
 
 ---
 
 ## Lưu Ý Quan Trọng
 
-1. **HTTPS bắt buộc:** Browser chỉ cho phép ghi âm qua HTTPS
-2. **Microphone permission:** User phải cho phép microphone
-3. **Giới hạn audio:** Khuyến nghị dưới 20MB (~20 phút)
-4. **Miễn phí:** Google AI Studio free tier đủ cho sử dụng cá nhân
-5. **Backup:** Nếu cần bảo mật hơn, có thể dùng VPS như documentation cũ
+1. **Miễn phí hoàn toàn:** Không cần API key, không tốn phí
+2. **Browser yêu cầu:** Chrome, Edge, hoặc Firefox mới nhất
+3. **Microphone permission:** Cần cho phép microphone để ghi âm
+4. **HTTPS:** Ghi âm chỉ hoạt động qua HTTPS

@@ -1,7 +1,7 @@
 /**
  * AI Summary Routes
- * Uses Google AI Studio (free tier) for text summarization
- * No credit card required - free API access
+ * Uses Browser Automation to open AI chat with meeting notes
+ * User manually generates summary (no API key required)
  */
 
 const express = require('express');
@@ -10,71 +10,62 @@ const db = require('../config/database');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const { spawn } = require('child_process');
 
 // ==================
 // Helper Functions
 // ==================
 
 /**
- * Call Google AI Studio API for summarization
+ * Open browser with meeting notes - triggers browser automation
  */
-async function generateSummaryWithAI(text, meetingTitle = 'Meeting') {
-    const apiKey = process.env.GOOGLE_AI_API_KEY;
+async function openBrowserWithNotes(notes, meetingTitle) {
+    return new Promise((resolve, reject) => {
+        const scriptPath = path.join(__dirname, '..', 'scripts', 'meeting_summary_helper.js');
 
-    if (!apiKey) {
-        throw new Error('Google AI API key not configured. Please add GOOGLE_AI_API_KEY to .env file.');
-    }
-
-    const prompt = `You are a professional meeting summarizer. Please analyze the following meeting notes/transcript and create a comprehensive summary.
-
-Meeting Title: ${meetingTitle}
-
-Please provide:
-1. **Key Topics Discussed**: Main subjects covered in the meeting
-2. **Important Decisions**: Any decisions made during the meeting
-3. **Action Items**: Tasks assigned with owners if mentioned
-4. **Next Steps**: Suggested follow-up actions
-
-Meeting Notes:
-${text}
-
-Please provide a well-structured summary in markdown format:`;
-
-    const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{
-                        text: prompt
-                    }]
-                }],
-                generationConfig: {
-                    temperature: 0.7,
-                    maxOutputTokens: 2048,
-                    topP: 0.95,
-                    topK: 40
-                }
-            })
+        // Create a temp file with the notes
+        const tempDir = path.join(__dirname, '..', 'data');
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir, { recursive: true });
         }
-    );
 
-    if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Google AI API error: ${error}`);
+        const notesFile = path.join(tempDir, 'temp_notes.txt');
+        fs.writeFileSync(notesFile, notes, 'utf8');
+
+        console.log('[Summary] Opening browser with notes...');
+
+        const python = spawn('node', [scriptPath, notesFile, meetingTitle], {
+            cwd: path.join(__dirname, '..'),
+            detached: true,
+            stdio: 'ignore'
+        });
+
+        python.unref();
+
+        resolve({
+            success: true,
+            message: 'Browser opened with meeting notes. Follow instructions to generate AI summary.'
+        });
+    });
+}
+
+/**
+ * Save summary to a text file
+ */
+function saveSummaryToFile(summary, meetingId) {
+    const uploadsDir = path.join(__dirname, '..', 'uploads', 'summaries');
+
+    // Ensure directory exists
+    if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    const data = await response.json();
+    const fileName = `meeting_${meetingId}_${Date.now()}.txt`;
+    const filePath = path.join(uploadsDir, fileName);
 
-    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-        return data.candidates[0].content.parts[0].text;
-    }
+    fs.writeFileSync(filePath, summary, 'utf8');
 
-    throw new Error('Failed to generate summary');
+    return `/uploads/summaries/${fileName}`;
 }
 
 /**
@@ -129,7 +120,7 @@ router.get('/config', async (req, res) => {
 
 /**
  * POST /api/notebooklm/summarize
- * Generate AI summary from text (notes/transcript)
+ * Open browser with meeting notes for AI summarization
  */
 router.post('/summarize', async (req, res) => {
     try {
@@ -149,10 +140,48 @@ router.post('/summarize', async (req, res) => {
             });
         }
 
-        console.log(`[AI Summary] Generating summary for meeting ${meetingId}...`);
+        console.log(`[AI Summary] Opening browser for meeting ${meetingId}...`);
 
-        // Generate summary using Google AI
-        const summary = await generateSummaryWithAI(text, meetingTitle || `Meeting ${meetingId}`);
+        // Open browser with notes - user will generate summary manually
+        const result = await openBrowserWithNotes(text, meetingTitle || `Meeting ${meetingId}`);
+
+        res.json({
+            success: true,
+            data: {
+                message: 'Browser opened! Follow the instructions on screen to generate AI summary.',
+                instructions: [
+                    '1. Google AI Studio opened with your meeting notes',
+                    '2. Click "Send" to generate summary',
+                    '3. Copy the AI response',
+                    '4. Paste back into DigiHub Summary tab'
+                ]
+            },
+            message: result.message
+        });
+
+    } catch (error) {
+        console.error('[AI Summary] Generate error:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/notebooklm/save-summary
+ * Save the user-generated summary from AI chat
+ */
+router.post('/save-summary', async (req, res) => {
+    try {
+        const { meetingId, summary } = req.body;
+
+        if (!meetingId || !summary) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing meetingId or summary content'
+            });
+        }
 
         // Save summary to file
         const summaryFilePath = saveSummaryToFile(summary, meetingId);
@@ -165,18 +194,22 @@ router.post('/summarize', async (req, res) => {
             [summaryFilePath, meetingId]
         );
 
-        // Save to meeting_recordings table if exists
-        try {
-            await db.query(
-                `INSERT INTO meeting_recordings
-                 (meeting_id, transcript, summary, summary_file_path, status, created_at)
-                 VALUES ($1, $2, $3, $4, 'completed', CURRENT_TIMESTAMP)`,
-                [meetingId, text, summary, summaryFilePath]
-            );
-        } catch (e) {
-            // Table might not exist, ignore
-            console.log('[AI Summary] Recording table not available');
-        }
+        res.json({
+            success: true,
+            data: {
+                summaryFilePath: summaryFilePath
+            },
+            message: 'Summary saved successfully!'
+        });
+
+    } catch (error) {
+        console.error('[AI Summary] Save error:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
 
         res.json({
             success: true,

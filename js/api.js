@@ -691,11 +691,19 @@ class DigiHubAPI {
     return this.request('/notebooklm/config');
   }
 
-  // Generate AI summary from text (notes/transcript)
+  // Generate AI summary - opens browser for manual AI processing
   async generateSummary(meetingId, text, meetingTitle) {
     return this.request('/notebooklm/summarize', {
       method: 'POST',
       body: JSON.stringify({ meetingId, text, meetingTitle })
+    });
+  }
+
+  // Save AI summary manually
+  async saveSummary(meetingId, summary) {
+    return this.request('/notebooklm/save-summary', {
+      method: 'POST',
+      body: JSON.stringify({ meetingId, summary })
     });
   }
 
